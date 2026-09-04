@@ -1,3 +1,6 @@
 like https://github.com/badacronym/imgsurf, but for any data!
 current goals:
-+ deflate (zlib) compression
++ deflate decompression
++ zlib and gzip decompression, using deflate
++ deflate compression
++ zlib and deflate compression

@@ -2,11 +2,6 @@
 
 echo -e "\033[33mcleaning up datasurf builds...\033[0m"
 
-if [[ -d ./obj/ ]]
-then
-    rm ./obj/ -rf
-fi
-
 if [[ -d ./bin/ ]]
 then
     rm ./bin/ -rf

@@ -1,0 +1,32 @@
+#!/bin/bash
+
+echo -e "\033[33mcleaning up datasurf builds...\033[0m"
+
+if [[ -d ./build/ ]]
+then
+    rm ./build/ -rf
+fi
+
+if [[ -d ./bin/ ]]
+then
+    rm ./bin/ -rf
+fi
+
+if [[ -d ./build/ ]]
+then
+    rm ./build/ -rf
+fi
+
+pushd ./assets/ > /dev/null
+for written in *reconstructed*
+do
+    if [[ ! -f $written ]]
+    then
+        continue;
+    fi
+
+    rm $written
+done
+popd > /dev/null
+
+echo -e "\033[32mcleaned datasurf!\n\033[0m"

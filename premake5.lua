@@ -15,7 +15,7 @@ project("datasurf")
     toolset("clang")
     buildoptions({"-Wextra", "-Wall", "-Wpedantic", "-Wconversion", "-Wshadow",
                   "-Wsign-compare", "-Wtype-limits", "-Wunused"})
-    includedirs({"./include/", "./vendor/puddle/include/"})
+    includedirs({"./include/"})
 
     filter("configurations:asan")
         defines{"ASAN"}
@@ -45,9 +45,7 @@ project("datasurf")
         files({ "./src/linux_datasurf*",
                 "./include/linux_datasurf*",
                 "./src/datasurf_*",
-                "./include/datasurf_*",
-                "./vendor/puddle/src/string_view.c",
-                "./vendor/puddle/src/linux_pd_path.c" })
+                "./include/datasurf_*"})
         includedirs("/usr/include/")
         linkoptions("-fuse-ld=mold")
 
@@ -59,9 +57,7 @@ project("datasurf")
         files({ "./src/win32_datasurf*",
                 "./include/win32_datasurf*",
                 "./src/datasurf_*",
-                "./include/datasurf_*",
-                "./vendor/puddle/src/string_view.c",
-                "./vendor/puddle/src/win32_pd_path.c" })
+                "./include/datasurf_*"})
 
     filter({"platforms:linux", "configurations:asan"})
         buildoptions({"-fsanitize=address,leak,undefined", "-fno-omit-frame-pointer",

@@ -22,16 +22,93 @@ else
     build=$1
 fi
 
+args="-DBUILD_LINUX \
+src/datasurf_test.c \
+-Iinclude/ \
+-O2"
+
+function compile()
+{
+    premake5 --version > /dev/null
+    if [[ $? != 0 ]]
+    then
+        echo -ne "\033[33;3mWARNING: premake5 binary not found. "
+        echo -e "Build options will not be respected.\033[0m"
+        echo "trying to identify a compiler..."
+
+        clang --version > /dev/null
+        if [[ $? = 0 ]]
+        then
+            echo "found clang as fallback compiler."
+            echo "building release build with default flags:"
+            echo "clang $args"
+            clang $args
+            if [[ $? != 0 ]]
+            then
+                echo -e "\033[31m\nERROR: clang failed to compile datasurf.\n\033[0m"
+                exit -1;
+            fi
+
+            if [[ ! -d ./bin/release ]]
+            then
+                mkdir ./bin/release
+            fi
+
+            mv ./a.out ./bin/release/datasurftest
+            fallback="true"
+            return;
+        fi
+
+        gcc --version > /dev/null
+        if [[ $? = 0 ]]
+        then
+            echo "found gcc as fallback compiler."
+            echo "building release build with default flags:"
+            echo "gcc $args"
+            gcc $args
+            if [[ $? != 0 ]]
+            then
+                echo -e "\033[31m\nERROR: gcc failed to compile datasurf.\n\033[0m"
+                exit -1
+            fi
+
+            if [[ ! -d ./bin/release ]]
+            then
+                mkdir ./bin/release
+            fi
+
+            mv ./a.out ./bin/release/datasurftest
+            fallback="true"
+            return;
+        fi
+    fi
+
+    premake5 gmake
+    if [[ $? != 0 ]]
+    then
+        echo -e "\033[31m\nERROR: premake failed to generate makefiles.\n\033[0m"
+        exit -1
+    fi
+
+    pushd ./build/ > /dev/null
+    make config=$build\_linux
+    if [[ $? != 0 ]]
+    then
+        echo -e "\033[31m\nERROR: GNU make failed to compile datasurf.\n\033[0m"
+        exit -1
+    fi
+    popd > /dev/null
+}
+
 if [[ $build = "asan" ]] || [[ $build = "debug" ]] || [[ $build = "release" ]]
 then
 
     echo ""
     echo -e "\033[36mcompiling datasurf...\033[0m"
     echo ""
-    premake5 gmake
 
-    pushd ./build/ > /dev/null
-    make config=$build\_linux
+    compile
+
 else
     echo -e "\033[31m\nERROR: invalid make config: $build.\033[0m"
     exit -2;
@@ -50,7 +127,12 @@ then
     exit 0
 fi
 
-popd > /dev/null
+if [[ $fallback = "true" ]]
+then
+    chmod +x ./bin/release/datasurftest
+    ./bin/release/datasurftest
+    exit $?
+fi
 
-chmod +x ./bin/$build/imgsurftest
-./bin/$build/imgsurftest
+chmod +x ./bin/$build/datasurftest
+./bin/$build/datasurftest

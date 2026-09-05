@@ -12,11 +12,6 @@ then
     rm ./bin/ -rf
 fi
 
-if [[ -d ./build/ ]]
-then
-    rm ./build/ -rf
-fi
-
 pushd ./assets/ > /dev/null
 for written in *reconstructed*
 do

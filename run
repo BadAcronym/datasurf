@@ -5,11 +5,6 @@ then
     mkdir ./obj/
 fi
 
-if [[ ! -d "./build/" ]]
-then
-    mkdir ./build/
-fi
-
 if [[ ! -d "./bin/" ]]
 then
     mkdir ./bin/
@@ -22,102 +17,86 @@ else
     build=$1
 fi
 
-args="-DBUILD_LINUX \
-src/datasurf_test.c \
+file_list="src/datasurf_test.c"
+
+args_release="-DBUILD_LINUX \
 -Iinclude/ \
+-fuse-ld=mold \
 -O2"
+
+args_debug="-DBUILD_LINUX \
+-DDEBUG \
+-Iinclude/ \
+-g \
+-fuse-ld=mold \
+-O0"
+
+args_asan="-DBUILD_LINUX \
+-DDEBUG \
+-DASAN \
+-Iinclude/ \
+-g \
+-fsanitize=address,leak,undefined \
+-fno-omit-frame-pointer \
+-static-libasan \
+-fuse-ld=mold \
+-O0"
 
 function compile()
 {
-    premake5 --version > /dev/null
-    if [[ $? != 0 ]]
+    echo "identifying a compiler..."
+
+    clang --version > /dev/null
+    if [[ $? = 0 ]]
     then
-        echo -ne "\033[33;3mWARNING: premake5 binary not found. "
-        echo -e "Build options will not be respected.\033[0m"
-        echo "trying to identify a compiler..."
-
-        clang --version > /dev/null
-        if [[ $? = 0 ]]
-        then
-            echo "found clang as fallback compiler."
-            echo "building release build with default flags:"
-            echo "clang $args"
-            clang $args
-            if [[ $? != 0 ]]
-            then
-                echo -e "\033[31m\nERROR: clang failed to compile datasurf.\n\033[0m"
-                exit -1;
-            fi
-
-            if [[ ! -d ./bin/release ]]
-            then
-                mkdir ./bin/release
-            fi
-
-            mv ./a.out ./bin/release/datasurftest
-            fallback="true"
-            return;
-        fi
-
+        echo "found clang."
+        compiler="clang"
+    else
         gcc --version > /dev/null
         if [[ $? = 0 ]]
         then
-            echo "found gcc as fallback compiler."
-            echo "building release build with default flags:"
-            echo "gcc $args"
-            gcc $args
-            if [[ $? != 0 ]]
-            then
-                echo -e "\033[31m\nERROR: gcc failed to compile datasurf.\n\033[0m"
-                exit -1
-            fi
-
-            if [[ ! -d ./bin/release ]]
-            then
-                mkdir ./bin/release
-            fi
-
-            mv ./a.out ./bin/release/datasurftest
-            fallback="true"
-            return;
+            compiler="gcc"
+        else
+            echo -e "\033[31m\nERROR: no suitable compiler found.\n\033[0m"
         fi
     fi
-
-    premake5 gmake
-    if [[ $? != 0 ]]
-    then
-        echo -e "\033[31m\nERROR: premake failed to generate makefiles.\n\033[0m"
-        exit -1
-    fi
-
-    pushd ./build/ > /dev/null
-    make config=$build\_linux
-    if [[ $? != 0 ]]
-    then
-        echo -e "\033[31m\nERROR: GNU make failed to compile datasurf.\n\033[0m"
-        exit -1
-    fi
-    popd > /dev/null
-}
-
-if [[ $build = "asan" ]] || [[ $build = "debug" ]] || [[ $build = "release" ]]
-then
 
     echo ""
     echo -e "\033[36mcompiling datasurf...\033[0m"
     echo ""
 
-    compile
+    if [[ ! -d ./bin/$build ]]
+    then
+        mkdir ./bin/$build
+    fi
 
+    echo "compiling $build build with the following command:"
+    echo "$compiler $1"
+    $compiler $1
+    if [[ $? != 0 ]]
+    then
+        echo -e "\033[31m\nERROR: $compiler failed to compile datasurf.\n\033[0m"
+        exit -1
+    fi
+    mv ./a.out ./bin/$build/datasurftest
+}
+
+if [[ $build = "release" ]]
+then
+    compile "$file_list $args_release"
+else
+if [[ $build = "debug" ]]
+then
+    compile "$file_list $args_debug"
+else
+if [[ $build = "asan" ]]
+then
+    compile "$file_list $args_asan"
 else
     echo -e "\033[31m\nERROR: invalid make config: $build.\033[0m"
-    exit -2;
+    exit 3;
 fi
-
-if [[ $? != 0 ]]
-then
-    echo -e "\033[31m\nERROR: failed to compile datasurf.\n\033[0m"
-    exit -1
+fi
 fi
 
 echo -e "\n"
@@ -125,13 +104,6 @@ echo -e "\n"
 if [[ $2 = "--compile-only" ]]
 then
     exit 0
-fi
-
-if [[ $fallback = "true" ]]
-then
-    chmod +x ./bin/release/datasurftest
-    ./bin/release/datasurftest
-    exit $?
 fi
 
 chmod +x ./bin/$build/datasurftest

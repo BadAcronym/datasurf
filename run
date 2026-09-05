@@ -20,6 +20,7 @@ fi
 args_always="-DBUILD_LINUX \
 src/datasurf_test.c \
 -Iinclude/ \
+-Wextra -Wall -Wpedantic -Wconversion -Wshadow -Wsign-compare -Wtype-limits -Wunused \
 -fuse-ld=mold"
 
 args_release="-O2"

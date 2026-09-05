@@ -17,29 +17,19 @@ else
     build=$1
 fi
 
-file_list="src/datasurf_test.c"
-
-args_release="-DBUILD_LINUX \
+args_always="-DBUILD_LINUX \
+src/datasurf_test.c \
 -Iinclude/ \
--fuse-ld=mold \
--O2"
+-fuse-ld=mold"
 
-args_debug="-DBUILD_LINUX \
--DDEBUG \
--Iinclude/ \
--g \
--fuse-ld=mold \
--O0"
+args_release="-O2"
 
-args_asan="-DBUILD_LINUX \
--DDEBUG \
--DASAN \
--Iinclude/ \
--g \
+args_debug="-DDEBUG -g -O0"
+
+args_asan="$args_debug -DASAN \
 -fsanitize=address,leak,undefined \
 -fno-omit-frame-pointer \
 -static-libasan \
--fuse-ld=mold \
 -O0"
 
 function compile()
@@ -83,15 +73,15 @@ function compile()
 
 if [[ $build = "release" ]]
 then
-    compile "$file_list $args_release"
+    compile "$args_always $args_release"
 else
 if [[ $build = "debug" ]]
 then
-    compile "$file_list $args_debug"
+    compile "$args_always $args_debug"
 else
 if [[ $build = "asan" ]]
 then
-    compile "$file_list $args_asan"
+    compile "$args_always $args_asan"
 else
     echo -e "\033[31m\nERROR: invalid make config: $build.\033[0m"
     exit 3;

@@ -12,3 +12,12 @@ compile_flags*
 *.log
 PowerShellEditorServices.json
 *reconstructed.*
+
+# Paul stuff
+Makefile
+/makes/
+
+## Eclipse
+.cproject
+.project
+/.settings/

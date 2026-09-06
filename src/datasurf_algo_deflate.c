@@ -33,34 +33,34 @@ uint64_t dsReadDeflate
         block.BFINAL = src[i] & 1;
         if(block.BFINAL)
         {
-            DATASURF_DEBUG("BFINAL at byte %lu", i);
+            DS_DEBUG("BFINAL at byte %lu", i);
             break;
         }
 
         block.BTYPE = (src[i] >> 1) & 3;
-        DATASURF_DEBUG("BTYPE: %u", block.BTYPE);
+        DS_DEBUG("BTYPE: %u", block.BTYPE);
 
         if(block.BTYPE == BTYPE_UNCROMPRESSED)
         {
             // 16 bits LEN
             // 16 bits NLEN
             // LEN bytes of actual, uncompressed data
-            DATASURF_ERROR("uncompressed block not implemented.");
+            DS_ERROR("uncompressed block not implemented.");
             return false;
         }
         else if(block.BTYPE == BTYPE_STATIC_HUFFMAN)
         {
-            DATASURF_ERROR("static huffman block not implemented.");
+            DS_ERROR("static huffman block not implemented.");
             return false;
         }
         else if(block.BTYPE == BTYPE_DYNAMIC_HUFFMAN)
         {
-            DATASURF_ERROR("dynamic huffman block not implemented.");
+            DS_ERROR("dynamic huffman block not implemented.");
             return false;
         }
         else if(block.BTYPE == BTYPE_RESERVED)
         {
-            DATASURF_ERROR("BTYPE of 3 (bits 11) is reserved.");
+            DS_ERROR("BTYPE of 3 (bits 11) is reserved.");
             return false;
         }
     }

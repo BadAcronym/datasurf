@@ -39,25 +39,25 @@ bool dsReadZlibPtr
 
     if(info.CM != 8)
     {
-        DATASURF_ERROR("could not validate CMF in zlib data. "
+        DS_ERROR("could not validate CMF in zlib data. "
                 "expected: 8, got: %u.", info.CM);
         return false;
     }
 
     if((uInfo.og.CMF * 256 + uInfo.og.FLG) % 31 != 0)
     {
-        DATASURF_ERROR("Failed zlib header integrity check: CMF*256 + FLG "
+        DS_ERROR("Failed zlib header integrity check: CMF*256 + FLG "
                 "is not a multiple of 31, but instead: %u.",
                 uInfo.og.CMF * 256 + uInfo.og.FLG);
         return false;
     }
 
-    DATASURF_DEBUG("CM:     %u", info.CM);
-    DATASURF_DEBUG("CINFO:  %u", info.CINFO);
-    DATASURF_DEBUG("FCHECK: %u", info.FCHECK);
-    DATASURF_DEBUG("FDICT:  %u", info.FDICT);
-    DATASURF_DEBUG("FLEVEL: %u", info.FLEVEL);
-    DATASURF_DEBUG("DICTID: %u", uInfo.og.DICTID);
+    DS_DEBUG("CM:     %u", info.CM);
+    DS_DEBUG("CINFO:  %u", info.CINFO);
+    DS_DEBUG("FCHECK: %u", info.FCHECK);
+    DS_DEBUG("FDICT:  %u", info.FDICT);
+    DS_DEBUG("FLEVEL: %u", info.FLEVEL);
+    DS_DEBUG("DICTID: %u", uInfo.og.DICTID);
 
     uint32_t madeChecksum = 0;
 
@@ -66,8 +66,8 @@ bool dsReadZlibPtr
 
     uint32_t readChecksum = *(uint32_t*)(&zlib[3 + bytesRead]);
 
-    DATASURF_DEBUG("made checksum: %u", madeChecksum);
-    DATASURF_DEBUG("read checksum: %u", readChecksum);
+    DS_DEBUG("made checksum: %u", madeChecksum);
+    DS_DEBUG("read checksum: %u", readChecksum);
 
     return madeChecksum == readChecksum;
 }

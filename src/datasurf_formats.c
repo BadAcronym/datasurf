@@ -43,9 +43,10 @@ bool dsReadZlibPtr
     fprintf(stderr, "DICTID: %u\n", DICTID);
     #endif
 
-    uint64_t bytesRead = dsReadDeflate(zlib, dest, CINFO, FCHECK, FDICT);
-
     uint32_t madeChecksum = 0;
+
+    uint64_t bytesRead = dsReadDeflate(zlib, dest, CINFO, FCHECK, FDICT, &madeChecksum);
+
     uint32_t readChecksum = *(uint32_t*)(&zlib[3 + bytesRead]);
 
     #ifdef DEBUG

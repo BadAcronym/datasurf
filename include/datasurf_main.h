@@ -11,7 +11,7 @@ bool dsReadZlibPtr
     uint64_t maxDeflateLen
 );
 
-bool dsReadDeflate
+uint64_t dsReadDeflate
 (
     uint8_t *src,
     uint8_t *dst,

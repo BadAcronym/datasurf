@@ -2,6 +2,16 @@
 
 #include <stdio.h>
 
+typedef struct ZLibInfo
+{
+    uint8_t CM     : 4;
+    uint8_t CINFO  : 4;
+    uint8_t FCHECK : 5;
+    uint8_t FDICT  : 1;
+    uint8_t FLEVEL : 2;
+}
+ZlibInfo;
+
 bool dsReadZlibPtr
 (
     uint8_t  *zlib,
@@ -12,17 +22,18 @@ bool dsReadZlibPtr
     uint8_t FLG    = zlib[1];
     uint8_t DICTID = zlib[2];
 
-    uint8_t CM     = CMF & 15;
-    uint8_t CINFO  = (CMF >> 4);
+    ZlibInfo info = {0};
+    info.CM     = CMF & 15;
+    info.CINFO  = (CMF >> 4);
 
-    uint8_t FCHECK = FLG & 31;
-    uint8_t FDICT  = (FLG >> 5) & 1;
-    uint8_t FLEVEL = (FLG >> 6);
+    info.FCHECK = FLG & 31;
+    info.FDICT  = (FLG >> 5) & 1;
+    info.FLEVEL = (FLG >> 6);
 
-    if(CM != 8)
+    if(info.CM != 8)
     {
         fprintf(stderr, "\033[31;1mcould not validate CMF in zlib data. "
-                "expected: 8, got: %u.\033[0m", CM);
+                "expected: 8, got: %u.\033[0m", info.CM);
         return false;
     }
 
@@ -35,17 +46,18 @@ bool dsReadZlibPtr
     }
 
     #ifdef DEBUG
-    fprintf(stderr, "CM:     %u\n", CM);
-    fprintf(stderr, "CINFO:  %u\n", CINFO);
-    fprintf(stderr, "FCHECK: %u\n", FCHECK);
-    fprintf(stderr, "FDICT:  %u\n", FDICT);
-    fprintf(stderr, "FLEVEL: %u\n", FLEVEL);
+    fprintf(stderr, "CM:     %u\n", info.CM);
+    fprintf(stderr, "CINFO:  %u\n", info.CINFO);
+    fprintf(stderr, "FCHECK: %u\n", info.FCHECK);
+    fprintf(stderr, "FDICT:  %u\n", info.FDICT);
+    fprintf(stderr, "FLEVEL: %u\n", info.FLEVEL);
     fprintf(stderr, "DICTID: %u\n", DICTID);
     #endif
 
     uint32_t madeChecksum = 0;
 
-    uint64_t bytesRead = dsReadDeflate(zlib, dest, CINFO, FCHECK, FDICT, &madeChecksum);
+    uint64_t bytesRead = dsReadDeflate(zlib, dest, info.CINFO, info.FCHECK, info.FDICT,
+                                       &madeChecksum);
 
     uint32_t readChecksum = *(uint32_t*)(&zlib[3 + bytesRead]);
 

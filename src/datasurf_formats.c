@@ -35,10 +35,10 @@ bool dsReadZlibPtr
     }
 
     #ifdef DEBUG
-    fprintf(stderr, "CM: %u\n",     CM);
-    fprintf(stderr, "CINFO: %u\n",  CINFO);
+    fprintf(stderr, "CM:     %u\n", CM);
+    fprintf(stderr, "CINFO:  %u\n", CINFO);
     fprintf(stderr, "FCHECK: %u\n", FCHECK);
-    fprintf(stderr, "FDICT: %u\n",  FDICT);
+    fprintf(stderr, "FDICT:  %u\n", FDICT);
     fprintf(stderr, "FLEVEL: %u\n", FLEVEL);
     fprintf(stderr, "DICTID: %u\n", DICTID);
     #endif

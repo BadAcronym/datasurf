@@ -1,4 +1,5 @@
 #include "datasurf_main.h"
+#include "datasurf_info_macros.h"
 
 #include <stdio.h>
 
@@ -34,41 +35,33 @@ uint64_t dsReadDeflate
         block.BFINAL = src[i] & 1;
         if(block.BFINAL)
         {
-            #ifdef DEBUG
-            fprintf(stderr, "BFINAL at byte %lu\n", i);
-            #endif
+        	DATASURF_DEBUG(stdout, "BFINAL at byte %lu", i);
             break;
         }
 
         block.BTYPE = (src[i] >> 1) & 3;
-        #ifdef DEBUG
-        fprintf(stderr, "BTYPE: %u\n", block.BTYPE);
-        #endif
+        DATASURF_DEBUG(stdout, "BTYPE: %u", block.BTYPE);
         if(block.BTYPE == BTYPE_UNCROMPRESSED)
         {
             // 16 bits LEN
             // 16 bits NLEN
             // LEN bytes of actual, uncompressed data
-            fprintf(stderr, "\033[31;3mERROR: uncompressed block not implemented."
-                    "\033[0m\n");
+        	DATASURF_WARNING(stderr, "uncompressed block not implemented.");
             return false;
         }
         else if(block.BTYPE == BTYPE_STATIC_HUFFMAN)
         {
-            fprintf(stderr, "\033[31;3mERROR: static huffman block not implemented."
-                    "\033[0m\n");
+        	DATASURF_WARNING(stderr, "static huffman block not implemented.");
             return false;
         }
         else if(block.BTYPE == BTYPE_DYNAMIC_HUFFMAN)
         {
-            fprintf(stderr, "\033[31;3mERROR: dynamic huffman block not implemented."
-                    "\033[0m\n");
+        	DATASURF_WARNING(stderr, "dynamic huffman block not implemented.");
             return false;
         }
         else if(block.BTYPE == BTYPE_RESERVED)
         {
-            fprintf(stderr, "\033[31;3mERROR: BTYPE of 3 (bits 11) is reserved."
-                    "\033[0m\n");
+        	DATASURF_WARNING(stderr, "BTYPE of 3 (bits 11) is reserved.");
             return false;
         }
     }

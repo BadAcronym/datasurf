@@ -1,4 +1,5 @@
 #include "datasurf_main.h"
+#include "datasurf_info_macros.h"
 
 #include <stdio.h>
 
@@ -32,27 +33,25 @@ bool dsReadZlibPtr
 
     if(info.CM != 8)
     {
-        fprintf(stderr, "\033[31;1mcould not validate CMF in zlib data. "
-                "expected: 8, got: %u.\033[0m", info.CM);
+    	DATASURF_ERROR(stderr, "could not validate CMF in zlib data. "
+                "expected: 8, got: %u.", info.CM);
         return false;
     }
 
     if((CMF * 256 + FLG) % 31 != 0)
     {
-        fprintf(stderr, "\033[31;1mFailed zlib header integrity check: CMF*256 + FLG "
-                "is not a multiple of 31, but instead: %u.\033[0m",
+    	DATASURF_ERROR(stderr, "Failed zlib header integrity check: CMF*256 + FLG "
+                "is not a multiple of 31, but instead: %u.",
                 CMF * 256 + FLG);
         return false;
     }
 
-    #ifdef DEBUG
-    fprintf(stderr, "CM:     %u\n", info.CM);
-    fprintf(stderr, "CINFO:  %u\n", info.CINFO);
-    fprintf(stderr, "FCHECK: %u\n", info.FCHECK);
-    fprintf(stderr, "FDICT:  %u\n", info.FDICT);
-    fprintf(stderr, "FLEVEL: %u\n", info.FLEVEL);
-    fprintf(stderr, "DICTID: %u\n", DICTID);
-    #endif
+    DATASURF_DEBUG(stdout, "CM:     %u", info.CM);
+    DATASURF_DEBUG(stdout, "CINFO:  %u", info.CINFO);
+    DATASURF_DEBUG(stdout, "FCHECK: %u", info.FCHECK);
+    DATASURF_DEBUG(stdout, "FDICT:  %u", info.FDICT);
+    DATASURF_DEBUG(stdout, "FLEVEL: %u", info.FLEVEL);
+    DATASURF_DEBUG(stdout, "DICTID: %u", DICTID);
 
     uint32_t madeChecksum = 0;
 
@@ -61,10 +60,8 @@ bool dsReadZlibPtr
 
     uint32_t readChecksum = *(uint32_t*)(&zlib[3 + bytesRead]);
 
-    #ifdef DEBUG
-    fprintf(stderr, "made checksum: %u\n", madeChecksum);
-    fprintf(stderr, "read checksum: %u\n", readChecksum);
-    #endif
+    DATASURF_DEBUG(stdout, "made checksum: %u", madeChecksum);
+    DATASURF_DEBUG(stdout, "read checksum: %u", readChecksum);
 
     return madeChecksum == readChecksum;
 }

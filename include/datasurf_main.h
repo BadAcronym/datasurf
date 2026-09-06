@@ -2,10 +2,22 @@
 #define DATASURF_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
-uint8_t* dsDeflate
+bool dsReadZlibPtr
 (
-    uint8_t *start
+    uint8_t  *zlib,
+    uint8_t  *dest,
+    uint64_t maxDeflateLen
+);
+
+bool dsReadDeflate
+(
+    uint8_t *src,
+    uint8_t *dst,
+    uint8_t CINFO,
+    uint8_t FCHECK,
+    uint8_t FDICT
 );
 
 #endif

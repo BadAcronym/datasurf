@@ -10,15 +10,15 @@
 
 #ifdef DEBUG
     #define DATASURF_ERROR(MESSAGE, ...) \
-        fprintf(stderr, "\033[31;1mERROR: "__LOCATION__ ": " \
-                MESSAGE "\033[0m\n", ##__VA_ARGS__)
+            fprintf(stderr, "\033[31;1m" __LOCATION__ " ERROR: " \
+                    MESSAGE "\033[0m\n", ##__VA_ARGS__)
 
     #define DATASURF_WARNING(MESSAGE, ...) \
-            fprintf(stderr, "\033[33;1mWARNING: " __LOCATION__ ": " \
+            fprintf(stderr, "\033[33;1m" __LOCATION__ " WARNING: " \
                     MESSAGE "\033[0m\n", ##__VA_ARGS__)
 
     #define DATASURF_DEBUG(MESSAGE, ...) \
-            fprintf(stderr, ""__LOCATION__": " MESSAGE "\n", ##__VA_ARGS__)
+            fprintf(stderr, __LOCATION__": " MESSAGE "\n", ##__VA_ARGS__)
 #else
     #define DATASURF_ERROR(MESSAGE, ...)
     #define DATASURF_WARNING(MESSAGE, ...)

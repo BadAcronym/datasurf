@@ -1,8 +1,6 @@
 #include "datasurf_main.h"
 #include "datasurf_info_macros.h"
 
-#include <stdio.h>
-
 typedef struct ZLibInfo
 {
     uint8_t CM     : 4;
@@ -13,17 +11,19 @@ typedef struct ZLibInfo
 }
 ZlibInfo;
 
-typedef union /*ZUnion*/{
-    uint8_t data[3];
-
+typedef union ZLibUnion
+{
+    uint8_t  data[3];
     ZlibInfo info;
-
-    struct{
+    struct
+    {
         uint8_t CMF;
         uint8_t FLG;
         uint8_t DICTID;
-    }orig;
-}ZUnion;
+    }
+    og;
+}
+ZLibUnion;
 
 bool dsReadZlibPtr
 (
@@ -31,11 +31,11 @@ bool dsReadZlibPtr
     uint8_t  *dest,
     uint64_t maxDeflateLen
 ){
-    ZUnion uinfo = { .data = {zlib[0], zlib[1], zlib[2]} };
-    ZlibInfo info = uinfo.info;
-    uint8_t CMF    = zlib[0];//can be replaced by uinfo.orig.CMF
-    uint8_t FLG    = zlib[1];//can be replaced by uinfo.orig.FLG
-    uint8_t DICTID = zlib[2];//can be replaced by uinfo.orig.DICTID
+    ZLibUnion uInfo = { .data = {zlib[0], zlib[1], zlib[2]} };
+    ZlibInfo  info  = uInfo.info;
+    // uint8_t CMF     = zlib[0];//can be replaced by uinfo.orig.CMF
+    // uint8_t FLG     = zlib[1];//can be replaced by uinfo.orig.FLG
+    // uint8_t DICTID  = zlib[2];//can be replaced by uinfo.orig.DICTID
 
     if(info.CM != 8)
     {
@@ -44,11 +44,11 @@ bool dsReadZlibPtr
         return false;
     }
 
-    if((CMF * 256 + FLG) % 31 != 0)
+    if((uInfo.og.CMF * 256 + uInfo.og.FLG) % 31 != 0)
     {
         DATASURF_ERROR("Failed zlib header integrity check: CMF*256 + FLG "
                 "is not a multiple of 31, but instead: %u.",
-                CMF * 256 + FLG);
+                uInfo.og.CMF * 256 + uInfo.og.FLG);
         return false;
     }
 
@@ -57,7 +57,7 @@ bool dsReadZlibPtr
     DATASURF_DEBUG("FCHECK: %u", info.FCHECK);
     DATASURF_DEBUG("FDICT:  %u", info.FDICT);
     DATASURF_DEBUG("FLEVEL: %u", info.FLEVEL);
-    DATASURF_DEBUG("DICTID: %u", DICTID);
+    DATASURF_DEBUG("DICTID: %u", uInfo.og.DICTID);
 
     uint32_t madeChecksum = 0;
 

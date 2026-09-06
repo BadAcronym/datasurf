@@ -55,6 +55,4 @@ bool dsReadZlibPtr
     #endif
 
     return madeChecksum == readChecksum;
-
-    return true;
 }

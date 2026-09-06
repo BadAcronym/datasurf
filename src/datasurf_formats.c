@@ -13,23 +13,29 @@ typedef struct ZLibInfo
 }
 ZlibInfo;
 
+typedef union /*ZUnion*/{
+	uint8_t data[3];
+
+	ZlibInfo info;
+
+	struct{
+		uint8_t CMF;
+		uint8_t FLG;
+		uint8_t DICTID;
+	}orig;
+}ZUnion;
+
 bool dsReadZlibPtr
 (
     uint8_t  *zlib,
     uint8_t  *dest,
     uint64_t maxDeflateLen
 ){
-    uint8_t CMF    = zlib[0];
-    uint8_t FLG    = zlib[1];
-    uint8_t DICTID = zlib[2];
-
-    ZlibInfo info = {0};
-    info.CM     = CMF & 15;
-    info.CINFO  = (CMF >> 4);
-
-    info.FCHECK = FLG & 31;
-    info.FDICT  = (FLG >> 5) & 1;
-    info.FLEVEL = (FLG >> 6);
+	ZUnion uinfo = { .data = {zlib[0], zlib[1], zlib[2]} };
+	ZlibInfo info = uinfo.info;
+	uint8_t CMF    = zlib[0];//can be replaced by uinfo.orig.CMF
+	uint8_t FLG    = zlib[1];//can be replaced by uinfo.orig.FLG
+	uint8_t DICTID = zlib[2];//can be replaced by uinfo.orig.DICTID
 
     if(info.CM != 8)
     {

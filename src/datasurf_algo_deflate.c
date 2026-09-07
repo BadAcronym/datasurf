@@ -1,5 +1,5 @@
 #include "datasurf_main.h"
-#include "datasurf_print_macros.h"
+#include "pd_print_macros.h"
 
 #define BTYPE_UNCROMPRESSED   0
 #define BTYPE_STATIC_HUFFMAN  1
@@ -33,34 +33,34 @@ uint64_t dsReadDeflate
         block.BFINAL = src[i] & 1;
         if(block.BFINAL)
         {
-            DS_DEBUG("BFINAL at byte %lu", i);
+            PD_DEBUG("BFINAL at byte %lu", i);
             break;
         }
 
         block.BTYPE = (src[i] >> 1) & 3;
-        DS_DEBUG("BTYPE: %u", block.BTYPE);
+        PD_DEBUG("BTYPE: %u", block.BTYPE);
 
         if(block.BTYPE == BTYPE_UNCROMPRESSED)
         {
             // 16 bits LEN
             // 16 bits NLEN
             // LEN bytes of actual, uncompressed data
-            DS_ERROR("uncompressed block not implemented.");
+            PD_ERROR("uncompressed block not implemented.");
             return false;
         }
         else if(block.BTYPE == BTYPE_STATIC_HUFFMAN)
         {
-            DS_ERROR("static huffman block not implemented.");
+            PD_ERROR("static huffman block not implemented.");
             return false;
         }
         else if(block.BTYPE == BTYPE_DYNAMIC_HUFFMAN)
         {
-            DS_ERROR("dynamic huffman block not implemented.");
+            PD_ERROR("dynamic huffman block not implemented.");
             return false;
         }
         else if(block.BTYPE == BTYPE_RESERVED)
         {
-            DS_ERROR("BTYPE of 3 (bits 11) is reserved.");
+            PD_ERROR("BTYPE of 3 (bits 11) is reserved.");
             return false;
         }
     }

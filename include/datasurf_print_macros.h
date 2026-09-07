@@ -19,7 +19,7 @@
 
 #ifdef DEBUG
     #define DS_DEBUG(MESSAGE, ...) \
-            fprintf(stdout, __LOCATION__"\n" MESSAGE "\n", ##__VA_ARGS__)
+            fprintf(stdout, MESSAGE "\n", ##__VA_ARGS__)
 #else
     #define DS_DEBUG(MESSAGE, ...)
 #endif

@@ -1,5 +1,5 @@
 #include "datasurf_main.h"
-#include "datasurf_info_macros.h"
+#include "datasurf_print_macros.h"
 
 typedef struct ZLibInfo
 {
@@ -33,9 +33,6 @@ bool dsReadZlibPtr
 ){
     ZLibUnion uInfo = { .data = {zlib[0], zlib[1], zlib[2]} };
     ZlibInfo  info  = uInfo.info;
-    // uint8_t CMF     = zlib[0];//can be replaced by uinfo.orig.CMF
-    // uint8_t FLG     = zlib[1];//can be replaced by uinfo.orig.FLG
-    // uint8_t DICTID  = zlib[2];//can be replaced by uinfo.orig.DICTID
 
     if(info.CM != 8)
     {

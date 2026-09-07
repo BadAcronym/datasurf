@@ -1,5 +1,5 @@
 #include "datasurf_main.h"
-#include "datasurf_info_macros.h"
+#include "datasurf_print_macros.h"
 
 #define BTYPE_UNCROMPRESSED   0
 #define BTYPE_STATIC_HUFFMAN  1

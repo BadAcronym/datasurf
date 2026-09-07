@@ -1,6 +1,7 @@
-#ifndef DATASURF_INFO_MACROS
-#define DATASURF_INFO_MACROS
+#ifndef DATASURF_PRINT_MACROS
+#define DATASURF_PRINT_MACROS
 
+// (Paulo):
 // __LINE__ is a number, so we need to transform it into a string in the
 // pre-processor with some funky stuff.
 #define __STRINGIFY(x) #x

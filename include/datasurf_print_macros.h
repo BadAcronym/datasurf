@@ -10,16 +10,16 @@
 #define __LOCATION__ "[" __FILE__ ":" __LINE_STR "]"
 
 #define DS_ERROR(MESSAGE, ...) \
-        fprintf(stderr, "\033[31;1m" __LOCATION__ " ERROR: " \
+        fprintf(stderr, "\n\033[31;1m" __LOCATION__ "\n\033[31;1;7mERROR: " \
                 MESSAGE "\033[0m\n", ##__VA_ARGS__)
 
 #define DS_WARN(MESSAGE, ...) \
-        fprintf(stdout, "\033[33;1m" __LOCATION__ " WARNING: " \
+        fprintf(stdout, "\033[33;1m" __LOCATION__ "\n\033[33;1;7mWARNING: " \
                 MESSAGE "\033[0m\n", ##__VA_ARGS__)
 
 #ifdef DEBUG
     #define DS_DEBUG(MESSAGE, ...) \
-            fprintf(stdout, __LOCATION__": " MESSAGE "\n", ##__VA_ARGS__)
+            fprintf(stdout, __LOCATION__"\n" MESSAGE "\n", ##__VA_ARGS__)
 #else
     #define DS_DEBUG(MESSAGE, ...)
 #endif

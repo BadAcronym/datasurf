@@ -1,3 +1,10 @@
+if(Test-Path "./vendor/puddle/clean.ps1")
+{
+    pushd "./vendor/puddle/"
+    &./clean.ps1
+    popd
+}
+
 Write-Host "cleaning up datasurf builds..." -Fore Yellow
 
 if(Test-Path "./bin")
@@ -29,4 +36,4 @@ foreach($file in (gci *.pdb))
     }
 }
 
-Write-Host "cleaned puddle!`n" -Fore Green
+Write-Host "cleaned datasurf!`n" -Fore Green

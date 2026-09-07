@@ -21,7 +21,6 @@
     #define DS_DEBUG(MESSAGE, ...) \
             fprintf(stdout, __LOCATION__": " MESSAGE "\n", ##__VA_ARGS__)
 #else
-    #define DS_WARN(MESSAGE, ...)
     #define DS_DEBUG(MESSAGE, ...)
 #endif
 

@@ -7,16 +7,24 @@ then
     rm ./bin/ -rf
 fi
 
-pushd ./assets/ > /dev/null
-for written in *reconstructed*
+for obj in *.o
 do
-    if [[ ! -f $written ]]
+    if [[ ! -f $obj ]]
     then
         continue;
     fi
 
-    rm $written
+    rm $obj
 done
-popd > /dev/null
+
+for out in callgrind.*
+do
+    if [[ ! -f $out ]]
+    then
+        continue;
+    fi
+
+    rm $out
+done
 
 echo -e "\033[32mcleaned datasurf!\n\033[0m"

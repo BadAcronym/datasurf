@@ -16,6 +16,15 @@ typedef struct DeflateBlock
 }
 DeflateBlock;
 
+typedef struct DynHuffBlock
+{
+    uint8_t HLIT  : 5;
+    uint8_t HDIST : 5;
+    uint8_t HCLEN : 4;
+    uint8_t HDATA : 7; // not sure if 7
+}
+DynHuffBlock;
+
 uint64_t dsReadDeflate
 (
     uint8_t  *src,
@@ -79,6 +88,14 @@ uint64_t dsReadDeflate
         }
         else if(block.BTYPE == BTYPE_DYNAMIC_HUFFMAN)
         {
+            DynHuffBlock block = {0};
+            block.HLIT  = src[i++] >> 3;
+            block.HDIST = src[i];
+            block.HCLEN = src[i++] >> 5;
+            block.HCLEN += src[i];
+
+            // data should start here, at src[i] >> 1
+
             PD_ERROR("dynamic huffman block not implemented.");
             return 0;
         }

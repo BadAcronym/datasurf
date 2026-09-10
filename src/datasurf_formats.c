@@ -62,13 +62,13 @@ bool dsReadZlibPtr
 
     if(!bytesRead)
     {
-        PD_ERROR("couldn't read any data from provided deflate stream.");
+        PD_ERROR("couldn't read data from provided deflate stream.");
     }
 
     uint32_t readChecksum = *(uint32_t*)(&zlib[3 + bytesRead]);
 
-    PD_DEBUG("made checksum: %u", madeChecksum);
-    PD_DEBUG("read checksum: %u", readChecksum);
+    PD_DEBUG("made checksum: 0x%X", madeChecksum);
+    PD_DEBUG("read checksum: 0x%X", readChecksum);
 
     return madeChecksum == readChecksum;
 }

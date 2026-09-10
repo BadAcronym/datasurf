@@ -1,13 +1,12 @@
 #include "datasurf_main.h"
-#include "string_view.h"
 #include "pd_print_macros.h"
 
 #include <memory.h>
 
-#define BTYPE_UNCROMPRESSED   0
-#define BTYPE_STATIC_HUFFMAN  1
-#define BTYPE_DYNAMIC_HUFFMAN 2
-#define BTYPE_RESERVED        3
+#define BTYPE_UNCROMPRESSED   0x00
+#define BTYPE_STATIC_HUFFMAN  0x01
+#define BTYPE_DYNAMIC_HUFFMAN 0x02
+#define BTYPE_RESERVED        0x03
 
 typedef struct DeflateBlock
 {
@@ -26,6 +25,9 @@ uint64_t dsReadDeflate
     uint8_t  FDICT,
     uint32_t *checksum
 ){
+    uint32_t adlerA = 1;
+    uint32_t adlerB = 0;
+
     bool endStream = false;
 
     DeflateBlock block = {0};
@@ -63,14 +65,13 @@ uint64_t dsReadDeflate
                 return 0;
             }
 
-            memcpy(dst, src + i, LEN);
-            StringView test = {0};
-            test.data = (char*)dst;
-            test.size = LEN;
-
-            PD_DEBUG("data: " PRI_SV, ARG_SV(test));
-
-            i += LEN;
+            for(uint32_t j = 0; j < LEN; ++j)
+            {
+                dst[j] = src[i];
+                adlerA = (adlerA + src[i]) % ADLER_PRIME;
+                adlerB = (adlerB + adlerA) % ADLER_PRIME;
+                ++i;
+            }
         }
         else if(block.BTYPE == BTYPE_STATIC_HUFFMAN)
         {
@@ -88,6 +89,8 @@ uint64_t dsReadDeflate
             return 0;
         }
     }
+
+    *checksum = (adlerB << 16) | adlerA;
 
     return i;
 }

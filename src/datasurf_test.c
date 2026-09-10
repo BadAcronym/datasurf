@@ -15,7 +15,7 @@ int main
         0x73, 0x65, 0x64, 0x2E
     };
     uint8_t  testUncompressed[39] = {0};
-    uint32_t checksumUncompressed = 0x21750EA2;
+    uint32_t checksumUncompressed = 0xDA3D0CA3;
     uint32_t checksum             = 0;
 
     uint64_t bytesRead = dsReadDeflate(uncompressed, testUncompressed, 0, 0, 0,
@@ -23,12 +23,14 @@ int main
 
     if(!bytesRead)
     {
-        PD_ERROR("could not read uncompressed string: no bytes read.");
+        PD_ERROR("deflate failed: could not read uncompressed string: no bytes read.");
+        return 1;
     }
     else if(checksum != checksumUncompressed)
     {
-        PD_ERROR("precomputed checksum %x does not match received checksum %x",
+        PD_ERROR("precomputed checksum (%X) does not match received checksum (%X)",
                  checksumUncompressed, checksum);
+        return 1;
     }
 
     return 0;

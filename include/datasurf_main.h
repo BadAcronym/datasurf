@@ -5,6 +5,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#define ADLER_PRIME 65521
+
 extern bool dsReadZlibPtr
 (
     uint8_t  *zlib,

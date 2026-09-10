@@ -33,14 +33,14 @@ uint64_t dsReadDeflate
     uint64_t i = 0;
     for(; !endStream; ++i)
     {
-        block.BFINAL = src[i] >> 7;
+        block.BFINAL = src[i] & 1;
         if(block.BFINAL)
         {
             PD_DEBUG("BFINAL at byte %lu", i);
             endStream = true;
         }
 
-        block.BTYPE = src[i] >> 5;
+        block.BTYPE = src[i] >> 1;
         PD_DEBUG("BTYPE: %u", block.BTYPE);
 
         if(block.BTYPE == BTYPE_UNCROMPRESSED)

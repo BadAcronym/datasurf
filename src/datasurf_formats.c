@@ -58,8 +58,13 @@ bool dsReadZlibPtr
 
     uint32_t madeChecksum = 0;
 
-    uint64_t bytesRead = dsReadDeflate(zlib, dest, info.CINFO, info.FCHECK, info.FDICT,
-                                       &madeChecksum);
+    uint64_t bytesRead = dsReadDeflate(zlib + 3, dest, info.CINFO, info.FCHECK,
+                                       info.FDICT, &madeChecksum);
+
+    if(!bytesRead)
+    {
+        PD_ERROR("couldn't read any data from provided deflate stream.");
+    }
 
     uint32_t readChecksum = *(uint32_t*)(&zlib[3 + bytesRead]);
 

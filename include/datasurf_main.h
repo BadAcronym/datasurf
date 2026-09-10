@@ -5,14 +5,14 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-bool dsReadZlibPtr
+extern bool dsReadZlibPtr
 (
     uint8_t  *zlib,
     uint8_t  *dest,
     uint64_t maxDeflateLen
 );
 
-uint64_t dsReadDeflate
+extern uint64_t dsReadDeflate
 (
     uint8_t  *src,
     uint8_t  *dst,

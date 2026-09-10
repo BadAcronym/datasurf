@@ -10,8 +10,7 @@
 extern bool dsReadZlibPtr
 (
     uint8_t  *zlib,
-    uint8_t  *dest,
-    uint64_t maxDeflateLen
+    uint8_t  *dest
 );
 
 extern uint64_t dsReadDeflate

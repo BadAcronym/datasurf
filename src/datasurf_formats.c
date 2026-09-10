@@ -28,8 +28,7 @@ ZLibUnion;
 bool dsReadZlibPtr
 (
     uint8_t  *zlib,
-    uint8_t  *dest,
-    uint64_t maxDeflateLen
+    uint8_t  *dest
 ){
     ZLibUnion uInfo = { .data = {zlib[0], zlib[1], zlib[2]} };
     ZlibInfo  info  = uInfo.info;

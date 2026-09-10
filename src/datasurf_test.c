@@ -24,12 +24,12 @@ int main
 
     if(!dsReadZlibPtr(uncompressed, testUncompressed))
     {
-        PD_ERROR("deflate failed: could not read uncompressed string.");
+        PD_FAIL("dsReadZlibPtr: could not read uncompressed string.");
         ++failed;
     }
     else
     {
-        PD_SUCCESS("passed test with uncompressed zlib string.");
+        PD_SUCCESS("passed dsReadZlibPtr with uncompressed zlib string.");
     }
 
     return failed;

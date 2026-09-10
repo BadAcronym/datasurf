@@ -55,10 +55,24 @@ bool dsReadZlibPtr
     PD_DEBUG("FLEVEL: %u", info.FLEVEL);
     PD_DEBUG("DICTID: %u", uInfo.og.DICTID);
 
+    uint32_t DICTID       = 0;
     uint32_t madeChecksum = 0;
+    uint32_t readChecksum = 0;
+    uint64_t bytesRead    = 0;
 
-    uint64_t bytesRead = dsReadDeflate(&zlib[3], dest, info.CINFO, info.FCHECK,
-                                       info.FDICT, &madeChecksum);
+    if(info.FDICT)
+    {
+        DICTID = *(uint32_t*)(&zlib[2]);
+        bytesRead = dsReadDeflate(&zlib[6], dest, info.CINFO, info.FCHECK, info.FDICT,
+                                  &madeChecksum);
+        readChecksum = *(uint32_t*)(&zlib[6 + bytesRead]);
+    }
+    else
+    {
+        bytesRead = dsReadDeflate(&zlib[2], dest, info.CINFO, info.FCHECK, info.FDICT,
+                                  &madeChecksum);
+        readChecksum = *(uint32_t*)(&zlib[2 + bytesRead]);
+    }
 
     if(!bytesRead)
     {
@@ -66,8 +80,7 @@ bool dsReadZlibPtr
         return 0;
     }
 
-    uint32_t readChecksum = *(uint32_t*)(&zlib[3 + bytesRead]);
-
+    PD_DEBUG("DICTID: 0x%X", DICTID);
     PD_DEBUG("made checksum: 0x%X", madeChecksum);
     PD_DEBUG("read checksum: 0x%X", readChecksum);
 

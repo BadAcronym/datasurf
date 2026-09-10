@@ -8,6 +8,8 @@
 #define BTYPE_DYNAMIC_HUFFMAN 0x02
 #define BTYPE_RESERVED        0x03
 
+#define DS_DEFLATE_LOG
+
 typedef struct DeflateBlock
 {
     uint8_t BFINAL : 1;
@@ -55,7 +57,6 @@ uint64_t dsReadDeflate
             i += 2;
             uint16_t COMP = LEN ^ 65535;
 
-            PD_DEBUG("identified uncompressed block.");
             PD_DEBUG("identified LEN: %u bytes", LEN);
 
             if(NLEN != COMP)
@@ -67,7 +68,6 @@ uint64_t dsReadDeflate
 
             for(uint32_t j = 0; j < LEN; ++j)
             {
-                PD_DEBUG("i = %lu", i);
                 dst[j] = src[i];
                 adlerA = (adlerA + src[i]) % ADLER_PRIME;
                 adlerB = (adlerB + adlerA) % ADLER_PRIME;
@@ -86,7 +86,7 @@ uint64_t dsReadDeflate
         }
         else // block.BTYPE == BTYPE_RESERVED
         {
-            PD_ERROR("BTYPE of 3 (bits 11) is reserved.");
+            PD_ERROR("BTYPE of 3 is reserved.");
             return 0;
         }
     }

@@ -38,7 +38,7 @@ uint64_t dsReadDeflate
         block.BFINAL = src[i] & 1;
         if(block.BFINAL)
         {
-            PD_DEBUG("BFINAL at byte %lu", i);
+            PD_DEBUG("BFINAL found.");
             endStream = true;
         }
 
@@ -67,6 +67,7 @@ uint64_t dsReadDeflate
 
             for(uint32_t j = 0; j < LEN; ++j)
             {
+                PD_DEBUG("i = %lu", i);
                 dst[j] = src[i];
                 adlerA = (adlerA + src[i]) % ADLER_PRIME;
                 adlerB = (adlerB + adlerA) % ADLER_PRIME;
@@ -91,6 +92,5 @@ uint64_t dsReadDeflate
     }
 
     *checksum = (adlerB << 16) | adlerA;
-
-    return i;
+    return i - 1;
 }

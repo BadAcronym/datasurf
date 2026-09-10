@@ -27,8 +27,8 @@ ZLibUnion;
 
 bool dsReadZlibPtr
 (
-    uint8_t  *zlib,
-    uint8_t  *dest
+    uint8_t *zlib,
+    uint8_t *dest
 ){
     ZLibUnion uInfo = { .data = {zlib[0], zlib[1], zlib[2]} };
     ZlibInfo  info  = uInfo.info;
@@ -57,12 +57,13 @@ bool dsReadZlibPtr
 
     uint32_t madeChecksum = 0;
 
-    uint64_t bytesRead = dsReadDeflate(zlib + 3, dest, info.CINFO, info.FCHECK,
+    uint64_t bytesRead = dsReadDeflate(&zlib[3], dest, info.CINFO, info.FCHECK,
                                        info.FDICT, &madeChecksum);
 
     if(!bytesRead)
     {
         PD_ERROR("couldn't read data from provided deflate stream.");
+        return 0;
     }
 
     uint32_t readChecksum = *(uint32_t*)(&zlib[3 + bytesRead]);
@@ -70,5 +71,12 @@ bool dsReadZlibPtr
     PD_DEBUG("made checksum: 0x%X", madeChecksum);
     PD_DEBUG("read checksum: 0x%X", readChecksum);
 
-    return madeChecksum == readChecksum;
+    if(madeChecksum != readChecksum)
+    {
+        PD_ERROR("made checksum (0x%X) does not match the read checksum (0x%X).",
+                 madeChecksum, readChecksum);
+        return false;
+    }
+
+    return true;
 }

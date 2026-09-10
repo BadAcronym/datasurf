@@ -1,8 +1,6 @@
 #include "datasurf_main.h"
 #include "pd_print_macros.h"
 
-#include <memory.h>
-
 #define BTYPE_UNCROMPRESSED   0x00
 #define BTYPE_STATIC_HUFFMAN  0x01
 #define BTYPE_DYNAMIC_HUFFMAN 0x02

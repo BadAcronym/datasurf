@@ -65,13 +65,19 @@ bool dsReadZlibPtr
         DICTID = *(uint32_t*)(&zlib[2]);
         bytesRead = dsReadDeflate(&zlib[6], dest, info.CINFO, info.FCHECK, info.FDICT,
                                   &madeChecksum);
-        readChecksum = *(uint32_t*)(&zlib[6 + bytesRead]);
+        readChecksum += (uint32_t)zlib[6 + bytesRead] << 24;
+        readChecksum += (uint32_t)zlib[7 + bytesRead] << 16;
+        readChecksum += (uint32_t)zlib[8 + bytesRead] << 8;
+        readChecksum += (uint32_t)zlib[9 + bytesRead];
     }
     else
     {
         bytesRead = dsReadDeflate(&zlib[2], dest, info.CINFO, info.FCHECK, info.FDICT,
                                   &madeChecksum);
-        readChecksum = *(uint32_t*)(&zlib[2 + bytesRead]);
+        readChecksum += (uint32_t)zlib[2 + bytesRead] << 24;
+        readChecksum += (uint32_t)zlib[3 + bytesRead] << 16;
+        readChecksum += (uint32_t)zlib[4 + bytesRead] << 8;
+        readChecksum += (uint32_t)zlib[5 + bytesRead];
     }
 
     if(!bytesRead)

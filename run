@@ -45,6 +45,7 @@ function compile()
         gcc --version > /dev/null
         if [[ $? = 0 ]]
         then
+            echo "found gcc."
             compiler="gcc"
         else
             echo -e "\033[31m\nERROR: no suitable compiler found.\n\033[0m"

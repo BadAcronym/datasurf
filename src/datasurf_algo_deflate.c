@@ -94,9 +94,9 @@ uint64_t dsReadDeflate
             dBlock.HCLEN =  src[i++] >> 5;
             dBlock.HCLEN += src[i];
 
-            PD_DEBUG("HLIT:  %u", dBlock.HLIT);
-            PD_DEBUG("HDIST: %u", dBlock.HDIST);
-            PD_DEBUG("HCLEN: %u", dBlock.HCLEN);
+            PD_DEBUG("HLIT:  %2u, actual: %3u", dBlock.HLIT,  dBlock.HLIT  + 257);
+            PD_DEBUG("HDIST: %2u, actual: %3u", dBlock.HDIST, dBlock.HDIST + 1);
+            PD_DEBUG("HCLEN: %2u, actual: %3u", dBlock.HCLEN, dBlock.HCLEN + 4);
 
             // data should start here, at src[i] >> 1
 

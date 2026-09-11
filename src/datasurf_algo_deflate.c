@@ -88,11 +88,15 @@ uint64_t dsReadDeflate
         }
         else if(block.BTYPE == BTYPE_DYNAMIC_HUFFMAN)
         {
-            DynHuffBlock block = {0};
-            block.HLIT  = src[i++] >> 3;
-            block.HDIST = src[i];
-            block.HCLEN = src[i++] >> 5;
-            block.HCLEN += src[i];
+            DynHuffBlock dBlock = {0};
+            dBlock.HLIT  =  src[i++] >> 3;
+            dBlock.HDIST =  src[i];
+            dBlock.HCLEN =  src[i++] >> 5;
+            dBlock.HCLEN += src[i];
+
+            PD_DEBUG("HLIT:  %u", dBlock.HLIT);
+            PD_DEBUG("HDIST: %u", dBlock.HDIST);
+            PD_DEBUG("HCLEN: %u", dBlock.HCLEN);
 
             // data should start here, at src[i] >> 1
 

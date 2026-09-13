@@ -21,13 +21,24 @@ typedef struct DynHuffBlock
     uint8_t HLIT  : 5;
     uint8_t HDIST : 5;
     uint8_t HCLEN : 4;
-    uint8_t HDATA : 7; // not sure if 7
 }
 DynHuffBlock;
 
 uint8_t dynHuffCodelenghts[19] =
 {
     16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
+};
+
+uint8_t bitmasks[8] =
+{
+    0x01,
+    0x03,
+    0x07,
+    0x0F,
+    0x1F,
+    0x3F,
+    0x7F,
+    0xFF
 };
 
 f_internal uint16_t readBits
@@ -37,13 +48,13 @@ f_internal uint16_t readBits
     uint8_t       *currBitOffset,
     uint64_t      *iterator
 ){
+    PD_DEBUG("initial byte >> offset: %u", src[*iterator] >> *currBitOffset);
     if(bitCount + *currBitOffset < 8)
     {
-        PD_DEBUG("incrementing currBitOffset to %u.", *currBitOffset);
-        PD_DEBUG("amount to shift right: %u", (*currBitOffset));
-        PD_DEBUG("value read: %u", src[*iterator] >> (8 - bitCount + *currBitOffset));
-        uint16_t value = src[*iterator] >> (8 - bitCount + *currBitOffset);
+        uint16_t value = src[*iterator] >> *currBitOffset & bitmasks[bitCount];
+        PD_DEBUG("value read: %u", value);
         *currBitOffset += bitCount;
+        PD_DEBUG("incrementing currBitOffset to %u.", *currBitOffset);
         return value;
     }
 
@@ -125,23 +136,44 @@ uint64_t dsReadDeflate
         }
         else if(block.BTYPE == BTYPE_DYNAMIC_HUFFMAN)
         {
+            uint8_t currBitOffset = 0;
+
             DynHuffBlock dBlock = {0};
-            dBlock.HLIT  =  src[i++] >> 3;
-            dBlock.HDIST =  src[i];
-            dBlock.HCLEN =  src[i++] >> 5;
-            dBlock.HCLEN += src[i] & 1;
+
+            // TESTING: just for testing the readBits function
+
+            uint8_t expectedHLIT = src[i] >> 3;
+            dBlock.HLIT = (uint8_t)readBits(src, 5, &currBitOffset, &i);
+            if(dBlock.HLIT != expectedHLIT)
+            {
+                PD_ERROR("HLIT misread. Expected: %u, got: %u.",
+                         expectedHLIT, dBlock.HLIT);
+            }
+
+            uint8_t expectedHDIST = src[i] & bitmasks[5];
+            dBlock.HDIST = (uint8_t)readBits(src, 5, &currBitOffset, &i);
+            if(dBlock.HDIST != expectedHDIST)
+            {
+                PD_ERROR("HDIST misread. Expected: %u, got: %u.",
+                         expectedHDIST, dBlock.HDIST);
+            }
+
+            uint8_t expectedHCLEN = (src[i] >> 5) + src[i + 1] & 1;
+            dBlock.HCLEN = (uint8_t)readBits(src, 4, &currBitOffset, &i);
+            if(dBlock.HCLEN != expectedHCLEN)
+            {
+                PD_ERROR("HCLEN misread. Expected: %u, got: %u.",
+                         expectedHCLEN, dBlock.HCLEN);
+            }
 
             PD_DEBUG("HLIT:  %2u, actual: %3u", dBlock.HLIT,  dBlock.HLIT  + 257);
             PD_DEBUG("HDIST: %2u, actual: %3u", dBlock.HDIST, dBlock.HDIST + 1);
             PD_DEBUG("HCLEN: %2u, actual: %3u", dBlock.HCLEN, dBlock.HCLEN + 4);
 
-            uint8_t currBitOffset = 1;
-
             // read HCLEN + 4 number of codelengths, each being 3 bits.
             for(uint8_t j = 0; j < dBlock.HCLEN + 4; ++j)
             {
-                PD_DEBUG("initial 7 bits: %u", src[i] >> currBitOffset);
-                uint8_t bits = (uint8_t)readBits(&src[i], 3, &currBitOffset, &i);
+                uint8_t bits = (uint8_t)readBits(src, 3, &currBitOffset, &i);
                 PD_DEBUG("codelength for %u: %u", dynHuffCodelenghts[j], bits);
             }
 

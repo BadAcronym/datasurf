@@ -25,14 +25,51 @@ typedef struct DynHuffBlock
 }
 DynHuffBlock;
 
+uint8_t dynHuffCodelenghts[19] =
+{
+    16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
+};
+
+f_internal uint16_t readBits
+(
+    const uint8_t *src,
+    uint8_t       bitCount,
+    uint8_t       *currBitOffset,
+    uint64_t      *iterator
+){
+    if(bitCount + *currBitOffset < 8)
+    {
+        PD_DEBUG("incrementing currBitOffset to %u.", *currBitOffset);
+        PD_DEBUG("amount to shift right: %u", (*currBitOffset));
+        PD_DEBUG("value read: %u", src[*iterator] >> (8 - bitCount + *currBitOffset));
+        uint16_t value = src[*iterator] >> (8 - bitCount + *currBitOffset);
+        *currBitOffset += bitCount;
+        return value;
+    }
+
+    PD_DEBUG("reading past next byte!");
+
+    for(uint8_t i = 0; i < bitCount; i += 8)
+    {
+        if(*currBitOffset > 8)
+        {
+            *currBitOffset -= 8;
+            ++*iterator;
+        }
+        bitCount -= 8;
+    }
+
+    return 0;
+}
+
 uint64_t dsReadDeflate
 (
-    uint8_t  *src,
-    uint8_t  *dst,
-    uint8_t  CINFO,
-    uint8_t  FCHECK,
-    uint8_t  FDICT,
-    uint32_t *checksum
+    const uint8_t *src,
+    uint8_t       *dst,
+    uint8_t       CINFO,
+    uint8_t       FCHECK,
+    uint8_t       FDICT,
+    uint32_t      *checksum
 ){
     uint32_t adlerA = 1;
     uint32_t adlerB = 0;
@@ -76,7 +113,7 @@ uint64_t dsReadDeflate
             for(uint32_t j = 0; j < LEN; ++j)
             {
                 dst[j] = src[i];
-                adlerA = (adlerA + src[i]) % ADLER_PRIME;
+                adlerA = (adlerA + dst[j]) % ADLER_PRIME;
                 adlerB = (adlerB + adlerA) % ADLER_PRIME;
                 ++i;
             }
@@ -92,13 +129,21 @@ uint64_t dsReadDeflate
             dBlock.HLIT  =  src[i++] >> 3;
             dBlock.HDIST =  src[i];
             dBlock.HCLEN =  src[i++] >> 5;
-            dBlock.HCLEN += src[i];
+            dBlock.HCLEN += src[i] & 1;
 
             PD_DEBUG("HLIT:  %2u, actual: %3u", dBlock.HLIT,  dBlock.HLIT  + 257);
             PD_DEBUG("HDIST: %2u, actual: %3u", dBlock.HDIST, dBlock.HDIST + 1);
             PD_DEBUG("HCLEN: %2u, actual: %3u", dBlock.HCLEN, dBlock.HCLEN + 4);
 
-            // data should start here, at src[i] >> 1
+            uint8_t currBitOffset = 1;
+
+            // read HCLEN + 4 number of codelengths, each being 3 bits.
+            for(uint8_t j = 0; j < dBlock.HCLEN + 4; ++j)
+            {
+                PD_DEBUG("initial 7 bits: %u", src[i] >> currBitOffset);
+                uint8_t bits = (uint8_t)readBits(&src[i], 3, &currBitOffset, &i);
+                PD_DEBUG("codelength for %u: %u", dynHuffCodelenghts[j], bits);
+            }
 
             PD_ERROR("dynamic huffman block not implemented.");
             return 0;
@@ -108,8 +153,11 @@ uint64_t dsReadDeflate
             PD_ERROR("BTYPE of 3 is reserved.");
             return 0;
         }
+
+        ++src;
     }
 
     *checksum = (adlerB << 16) | adlerA;
+    PD_DEBUG("read a total of %lu bytes.", i - 1);
     return i - 1;
 }

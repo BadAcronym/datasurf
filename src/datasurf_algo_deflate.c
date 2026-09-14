@@ -116,9 +116,9 @@ f_internal uint16_t reverseBits
 
 f_internal void makeCanonicalCodes
 (
-    const uint8_t *lengths,
-    uint16_t      symbolCount,
-    HuffmanCode   *codes
+    const uint16_t *lengths,
+    uint16_t       symbolCount,
+    HuffmanCode    *codes
 ){
     uint16_t count[MAX_CODELEN + 1]    = {0};
     uint16_t nextCode[MAX_CODELEN + 1] = {0};
@@ -212,9 +212,9 @@ f_internal void insertCode
 
 f_internal void buildTree
 (
-    HuffmanTree   *tree,
-    const uint8_t *lengths,
-    uint16_t      symbolCount
+    HuffmanTree    *tree,
+    const uint16_t *lengths,
+    uint16_t       symbolCount
 ){
     HuffmanNode node   = {0};
     HuffmanCode *codes = calloc(symbolCount, sizeof(HuffmanCode));
@@ -351,7 +351,7 @@ uint64_t dsReadDeflate
             PD_DEBUG("HDIST: %2u, actual: %3u", dBlock.HDIST, dBlock.HDIST + 1);
             PD_DEBUG("HCLEN: %2u, actual: %3u", dBlock.HCLEN, dBlock.HCLEN + 4);
 
-            uint8_t compressLengths[19] = {0};
+            uint16_t compressLengths[19] = {0};
 
             // read HCLEN + 4 number of codelengths, each being 3 bits.
             for(uint8_t j = 0; j < dBlock.HCLEN + 4; ++j)
@@ -370,57 +370,66 @@ uint64_t dsReadDeflate
             // I now need to model and construct the "canonical" huffman tree
             // using the lengths in compressLengths, before I can obtain the
             // codes for the other two trees.
-            HuffmanTree ogTree = {0};
-            buildTree(&ogTree, compressLengths, 19);
+            HuffmanTree encodedTree = {0};
+            buildTree(&encodedTree, compressLengths, 19);
 
-            PD_DEBUG("after code-length alphabet: iterator=%llu, offset=%u",
-                     (unsigned long long)i,
-                     bitOffset);
-
-            for (uint8_t j = 0; j < 8; ++j)
-            {
-                PD_DEBUG("byte[%llu] = 0x%02X",
-                         (unsigned long long)(i + j),
-                         src[i + j]);
-            }
-
-            printTree(&ogTree);
+            printTree(&encodedTree);
 
             for(uint16_t j = 0; j < totalLength; ++j)
             {
-                PD_DEBUG("before decode: iterator=%llu, bitOffset=%u, byte=0x%02X",
-                         (unsigned long long)i,
-                         bitOffset,
-                         src[i]);
-
-                uint16_t symbol = decodeSymbol(&ogTree, src, &bitOffset, &i);
-
-                PD_DEBUG("decoded symbol: %u; after decode: iterator=%llu, bitOffset=%u",
-                         symbol,
-                         (unsigned long long)i,
-                         bitOffset);
+                uint16_t symbol = decodeSymbol(&encodedTree, src, &bitOffset, &i);
 
                 PD_ASSERT(symbol < 19, "A symbol above 18 (%u) from the compressed tree"
                           " cannot be interpreted.", symbol);
 
                 if(symbol < 16)
                 {
+                    // literal length
                     litDistLengths[j] = (uint8_t)symbol;
                     previousLength    = (uint8_t)symbol;
+
+                    PD_DEBUG("read literal length of %u from compressed tree.", symbol);
                 }
                 else if(symbol == 16)
                 {
                     // repeat previous length, 3-6 times
+                    uint8_t repeat = 3 + (uint8_t)readBits(src, 2, &bitOffset, &i);
+
+                    PD_DEBUG("read repeat previous length (%u) %u times.",
+                             previousLength, repeat);
                 }
                 else if(symbol == 17)
                 {
                     // repeat zero, 3-10 times
+                    uint8_t repeat = 3 + (uint8_t)readBits(src, 3, &bitOffset, &i);
+                    for(uint8_t k = 0; k < repeat; ++k)
+                    {
+                        litDistLengths[j++] = 0;
+                    }
+
+                    PD_DEBUG("read repeat 0 %u times.", repeat);
                 }
                 else if(symbol == 18)
                 {
                     // repeat zero, 11-138 times.
+                    uint8_t repeat = 11 + (uint8_t)readBits(src, 7, &bitOffset, &i);
+                    for(uint8_t k = 0; k < repeat; ++k)
+                    {
+                        litDistLengths[j++] = 0;
+                    }
+
+                    PD_DEBUG("read repeat 0 %u times.", repeat);
                 }
             }
+
+            HuffmanTree literalLengthTree = {0};
+            HuffmanTree distanceTree      = {0};
+            buildTree(&literalLengthTree, litDistLengths, distanceLengthOffset);
+            buildTree(&distanceTree, litDistLengths + distanceLengthOffset,
+                      totalLength - distanceLengthOffset);
+
+            // now that we have the other two trees constructed, we can use those to
+            // decode the actual data. yes?
         }
         else // block.BTYPE == BTYPE_RESERVED
         {

@@ -134,7 +134,7 @@ uint64_t dsReadDeflate
             uint8_t      currBitOffset = 0;
             DynHuffBlock dBlock        = {0};
 
-            dBlock.HLIT = (uint8_t)readBits(src, 5, &currBitOffset, &i);
+            dBlock.HLIT  = (uint8_t)readBits(src, 5, &currBitOffset, &i);
             dBlock.HDIST = (uint8_t)readBits(src, 5, &currBitOffset, &i);
             dBlock.HCLEN = (uint8_t)readBits(src, 4, &currBitOffset, &i);
 
@@ -145,8 +145,8 @@ uint64_t dsReadDeflate
             // read HCLEN + 4 number of codelengths, each being 3 bits.
             for(uint8_t j = 0; j < dBlock.HCLEN + 4; ++j)
             {
-                uint8_t bits = (uint8_t)readBits(src, 3, &currBitOffset, &i);
-                PD_DEBUG("codelength for %u: %u", dynHuffCodelenghts[j], bits);
+                uint8_t codelen = (uint8_t)readBits(src, 3, &currBitOffset, &i);
+                PD_DEBUG("codelength for %u: %u", dynHuffCodelenghts[j], codelen);
             }
 
             PD_ERROR("dynamic huffman block not implemented.");

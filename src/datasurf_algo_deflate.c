@@ -41,9 +41,8 @@ f_internal uint16_t readBits
     uint8_t       *currBitOffset,
     uint64_t      *iterator
 ){
-    // for when I add these macros
-    // PD_ASSERT(currBitOffset < 8, "currBitOffset cannot be bigger than 7.");
-    // PD_ASSERT(bitCount < 16, "maximum bit count to be read is 16.");
+    PD_ASSERT(*currBitOffset < 8, "currBitOffset cannot be bigger than 7.");
+    PD_ASSERT(bitCount < 16, "maximum bit count to be read is 16.");
 
     uint16_t value    = 0;
     uint8_t  bitsRead = 0;

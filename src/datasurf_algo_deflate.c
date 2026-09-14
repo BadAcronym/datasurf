@@ -49,7 +49,7 @@ typedef struct HuffmanTree
 }
 HuffmanTree;
 
-uint8_t dynHuffCodelenghOrder[19] =
+const uint8_t dynHuffCodelenghOrder[19] =
 {
     16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
 };
@@ -63,10 +63,10 @@ f_internal uint16_t readBits
 (
     const uint8_t *src,
     uint8_t       bitCount,
-    uint8_t       *currBitOffset,
+    uint8_t       *bitOffset,
     uint64_t      *iterator
 ){
-    PD_ASSERT(*currBitOffset < 8, "currBitOffset cannot be bigger than 7.");
+    PD_ASSERT(*bitOffset < 8, "bitOffset cannot be bigger than 7.");
     PD_ASSERT(bitCount < 16, "maximum bit count to be read is 16.");
 
     uint16_t value    = 0;
@@ -74,18 +74,18 @@ f_internal uint16_t readBits
 
     while(bitCount > 0)
     {
-        uint8_t  available = 8 - *currBitOffset;
+        uint8_t  available = 8 - *bitOffset;
         uint8_t  take      = bitCount < available ? bitCount : available;
-        uint16_t part      = (src[*iterator] >> *currBitOffset) & bitmasks[take];
+        uint16_t part      = (src[*iterator] >> *bitOffset) & bitmasks[take];
 
         value          |= part << bitsRead;
         bitsRead       += take;
         bitCount       -= take;
-        *currBitOffset += take;
+        *bitOffset += take;
 
-        if(*currBitOffset > 7)
+        if(*bitOffset > 7)
         {
-            *currBitOffset = 0;
+            *bitOffset = 0;
             ++(*iterator);
         }
     }
@@ -104,7 +104,8 @@ f_internal uint16_t reverseBits
 
     for(uint8_t i = 0; i < length; ++i)
     {
-        result |= (code >> i) & 1 << (length - i - 1);
+        result = (uint16_t)((result << 1) | (code & 1));
+        code >>= 1;
     }
 
     PD_ASSERT(result < (1 << length), "result (length %u) %u >= %u (maximum)",
@@ -133,7 +134,8 @@ f_internal void makeCanonicalCodes
     uint16_t code = 0;
     for(uint8_t bits = 1; bits < MAX_CODELEN + 1; ++bits)
     {
-        nextCode[bits] = (uint16_t)((code + count[bits - 1]) << 1);
+        code = (uint16_t)((code + count[bits - 1]) << 1);
+        nextCode[bits] = code;
     }
 
     for(uint16_t symbol = 0; symbol < symbolCount; ++symbol)
@@ -146,9 +148,22 @@ f_internal void makeCanonicalCodes
 
         if(length)
         {
-            uint16_t canonicalCode = nextCode[length]++;
-            codes[symbol].code = reverseBits(canonicalCode, length);
+            uint16_t canonical = nextCode[length]++;
+            codes[symbol].code = reverseBits(canonical, length);
         }
+    }
+}
+
+f_internal void printTree
+(
+    const HuffmanTree *tree
+){
+    uint16_t treeSize = (uint16_t)pdArrSize(tree->nodes);
+
+    for(uint16_t i = 0; i < treeSize; ++i)
+    {
+        PD_DEBUG("node %u: symbol: %i, children: %i and %i", i, tree->nodes[i].symbol,
+                 tree->nodes[i].children[0], tree->nodes[i].children[1]);
     }
 }
 
@@ -177,16 +192,20 @@ f_internal void insertCode
             tmp.children[1] = -1;
 
             pdArrPush(tree->nodes, tmp);
-            child = (int16_t)pdArrSize(tree->nodes);
+            child = (int16_t)(pdArrSize(tree->nodes) - 1);
+            tree->nodes[node].children[bit] = child;
 
-            tree->nodes[node].children[bit] = (int16_t)pdArrSize(tree->nodes);
+            PD_ASSERT(child >= 0 && child < (int16_t)pdArrSize(tree->nodes),
+                      "invalid Huffman child index: %d, node count: %zu",
+                      child, pdArrSize(tree->nodes));
         }
 
         node = child;
     }
 
-    PD_ASSERT(tree->nodes[node].symbol == -1,
-              "huffman tree is constructed incorrectly.");
+    PD_ASSERT(tree->nodes[node].symbol == -1, "huffman tree is constructed incorrectly."
+              "\nSymbol %u at node %u cannot be overwritten.",
+              tree->nodes[node].symbol, node);
 
     tree->nodes[node].symbol = (int16_t)symbol;
 }
@@ -202,27 +221,24 @@ f_internal void buildTree
 
     PD_ASSERT(codes, "failed to allocate HuffmanCode array.")
 
+    // root node
     node.symbol      = -1;
     node.children[0] = -1;
     node.children[1] = -1;
-
     pdArrPush(tree->nodes, node);
 
     makeCanonicalCodes(lengths, symbolCount, codes);
 
     for(uint16_t i = 0; i < symbolCount; ++i)
     {
+        if(!codes[i].length)
+        {
+            continue;
+        }
         insertCode(tree, codes[i].code, codes[i].symbol, codes[i].length);
     }
 
     free(codes);
-}
-
-f_internal void printTree
-(
-    const HuffmanTree *tree
-){
-    PD_DEBUG("root: %i", tree->nodes[0].symbol);
 }
 
 f_internal uint16_t decodeSymbol
@@ -246,8 +262,7 @@ f_internal uint16_t decodeSymbol
 
         if(node < 0)
         {
-            PD_ERROR("huffman code that was decoded (%u) is invalid for the tree "
-                     "that was given.", node);
+            PD_ERROR("huffman code is invalid for the tree that was given.");
             return UINT16_MAX;
         }
 
@@ -271,8 +286,9 @@ uint64_t dsReadDeflate
     uint8_t       FDICT,
     uint32_t      *checksum
 ){
-    uint32_t adlerA = 1;
-    uint32_t adlerB = 0;
+    uint8_t  bitOffset = 0;
+    uint32_t adlerA    = 1;
+    uint32_t adlerB    = 0;
 
     bool endStream = false;
 
@@ -281,14 +297,14 @@ uint64_t dsReadDeflate
     uint64_t i = 0;
     for(; !endStream; ++i)
     {
-        block.BFINAL = src[i] & 1;
+        block.BFINAL = (uint8_t)readBits(src, 1, &bitOffset, &i);
         if(block.BFINAL)
         {
             PD_DEBUG("BFINAL found.");
             endStream = true;
         }
 
-        block.BTYPE = src[i] >> 1;
+        block.BTYPE = (uint8_t)readBits(src, 2, &bitOffset, &i);
         PD_DEBUG("BTYPE: %u", block.BTYPE);
 
         if(block.BTYPE == BTYPE_UNCROMPRESSED)
@@ -325,12 +341,11 @@ uint64_t dsReadDeflate
         }
         else if(block.BTYPE == BTYPE_DYNAMIC_HUFFMAN)
         {
-            uint8_t      currBitOffset = 0;
             DynHuffBlock dBlock        = {0};
 
-            dBlock.HLIT  = (uint8_t)readBits(src, 5, &currBitOffset, &i);
-            dBlock.HDIST = (uint8_t)readBits(src, 5, &currBitOffset, &i);
-            dBlock.HCLEN = (uint8_t)readBits(src, 4, &currBitOffset, &i);
+            dBlock.HLIT  = (uint8_t)readBits(src, 5, &bitOffset, &i);
+            dBlock.HDIST = (uint8_t)readBits(src, 5, &bitOffset, &i);
+            dBlock.HCLEN = (uint8_t)readBits(src, 4, &bitOffset, &i);
 
             PD_DEBUG("HLIT:  %2u, actual: %3u", dBlock.HLIT,  dBlock.HLIT  + 257);
             PD_DEBUG("HDIST: %2u, actual: %3u", dBlock.HDIST, dBlock.HDIST + 1);
@@ -342,7 +357,7 @@ uint64_t dsReadDeflate
             for(uint8_t j = 0; j < dBlock.HCLEN + 4; ++j)
             {
                 uint8_t symbol = dynHuffCodelenghOrder[j];
-                compressLengths[symbol] = (uint8_t)readBits(src, 3, &currBitOffset, &i);
+                compressLengths[symbol] = (uint8_t)readBits(src, 3, &bitOffset, &i);
                 PD_DEBUG("read code length %u for symbol %u.",
                          compressLengths[symbol], symbol);
             }
@@ -358,12 +373,34 @@ uint64_t dsReadDeflate
             HuffmanTree ogTree = {0};
             buildTree(&ogTree, compressLengths, 19);
 
+            PD_DEBUG("after code-length alphabet: iterator=%llu, offset=%u",
+                     (unsigned long long)i,
+                     bitOffset);
+
+            for (uint8_t j = 0; j < 8; ++j)
+            {
+                PD_DEBUG("byte[%llu] = 0x%02X",
+                         (unsigned long long)(i + j),
+                         src[i + j]);
+            }
+
             printTree(&ogTree);
 
             for(uint16_t j = 0; j < totalLength; ++j)
             {
-                uint16_t symbol = decodeSymbol(&ogTree, src, &currBitOffset, &i);
-                PD_ASSERT(symbol < 18, "A symbol above 18 (%u) from the compressed tree"
+                PD_DEBUG("before decode: iterator=%llu, bitOffset=%u, byte=0x%02X",
+                         (unsigned long long)i,
+                         bitOffset,
+                         src[i]);
+
+                uint16_t symbol = decodeSymbol(&ogTree, src, &bitOffset, &i);
+
+                PD_DEBUG("decoded symbol: %u; after decode: iterator=%llu, bitOffset=%u",
+                         symbol,
+                         (unsigned long long)i,
+                         bitOffset);
+
+                PD_ASSERT(symbol < 19, "A symbol above 18 (%u) from the compressed tree"
                           " cannot be interpreted.", symbol);
 
                 if(symbol < 16)

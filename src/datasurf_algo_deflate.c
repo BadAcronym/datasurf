@@ -6,6 +6,8 @@
 #define BTYPE_DYNAMIC_HUFFMAN 0x02
 #define BTYPE_RESERVED        0x03
 
+#define MAX_CODELEN           0x0F
+
 #define DS_DEFLATE_LOG
 
 typedef struct DeflateBlock
@@ -24,7 +26,29 @@ typedef struct DynHuffBlock
 }
 DynHuffBlock;
 
-uint8_t dynHuffCodelenghts[19] =
+typedef struct HuffmanCode
+{
+    uint16_t code;
+    uint8_t  length;
+    uint16_t symbol;
+}
+HuffmanCode;
+
+typedef struct HuffmanNode
+{
+    uint16_t symbol;
+    uint16_t children[2];
+}
+HuffmanNode;
+
+typedef struct HuffmanTree
+{
+    HuffmanNode *nodes;
+    uint16_t    nodeCount;
+}
+HuffmanTree;
+
+uint8_t dynHuffCodelenghOrder[19] =
 {
     16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
 };
@@ -66,6 +90,28 @@ f_internal uint16_t readBits
     }
 
     return value;
+}
+
+f_internal uint16_t decodeSymbol
+(
+    const HuffmanTree *tree,
+    const uint8_t     *src,
+    uint8_t           *currBitOffset,
+    uint64_t          *iterator
+){
+    PD_ASSERT(*currBitOffset < 8, "currBitOffset cannot be bigger than 7.");
+
+    uint16_t symbol = 0;
+
+    // read bits until the constructed code matches a value in the huffman tree that's
+    // used to read the other two huffman trees.
+    bool match = false;
+    while(!match)
+    {
+        uint8_t bit = (uint8_t)readBits(src, 1, currBitOffset, iterator);
+    }
+
+    return symbol;
 }
 
 uint64_t dsReadDeflate
@@ -142,15 +188,49 @@ uint64_t dsReadDeflate
             PD_DEBUG("HDIST: %2u, actual: %3u", dBlock.HDIST, dBlock.HDIST + 1);
             PD_DEBUG("HCLEN: %2u, actual: %3u", dBlock.HCLEN, dBlock.HCLEN + 4);
 
+            uint8_t compressLengths[19] = {0};
+
             // read HCLEN + 4 number of codelengths, each being 3 bits.
             for(uint8_t j = 0; j < dBlock.HCLEN + 4; ++j)
             {
-                uint8_t codelen = (uint8_t)readBits(src, 3, &currBitOffset, &i);
-                PD_DEBUG("codelength for %u: %u", dynHuffCodelenghts[j], codelen);
+                uint8_t symbol = dynHuffCodelenghOrder[j];
+                compressLengths[symbol] = (uint8_t)readBits(src, 3, &currBitOffset, &i);
+                PD_DEBUG("read code length %u for symbol %u.",
+                         compressLengths[symbol], symbol);
             }
 
-            PD_ERROR("dynamic huffman block not implemented.");
-            return 0;
+            uint16_t distanceLengthOffset = dBlock.HDIST + 1;
+            uint16_t totalLength = dBlock.HLIT + dBlock.HDIST + 258;
+            uint16_t litDistLengths[totalLength];
+            uint16_t previousLength = 0;
+
+            // I somehow need to model and construct the "canonical" huffman tree using
+            // the data above, before I can proceed.
+
+            for(uint16_t j = 0; j < totalLength; ++j)
+            {
+                uint16_t symbol = decodeSymbol(src, &currBitOffset, &i);
+
+                PD_ASSERT(symbol < 18, "A symbol above 18 cannot be interpreted.");
+
+                if(symbol < 16)
+                {
+                    litDistLengths[j] = (uint8_t)symbol;
+                    previousLength    = (uint8_t)symbol;
+                }
+                else if(symbol == 16)
+                {
+                    // repeat previous length, 3-6 times
+                }
+                else if(symbol == 17)
+                {
+                    // repeat zero, 3-10 times
+                }
+                else if(symbol == 18)
+                {
+                    // repeat zero, 11-138 times.
+                }
+            }
         }
         else // block.BTYPE == BTYPE_RESERVED
         {

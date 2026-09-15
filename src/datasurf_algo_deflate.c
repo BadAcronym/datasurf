@@ -30,7 +30,7 @@ DynHuffBlock;
 typedef struct HuffmanCode
 {
     uint16_t code;
-    uint8_t  length;
+    uint16_t length;
     uint16_t symbol;
 }
 HuffmanCode;
@@ -78,9 +78,9 @@ f_internal uint16_t readBits
         uint8_t  take      = bitCount < available ? bitCount : available;
         uint16_t part      = (src[*iterator] >> *bitOffset) & bitmasks[take];
 
-        value          |= part << bitsRead;
-        bitsRead       += take;
-        bitCount       -= take;
+        value      |= part << bitsRead;
+        bitsRead   += take;
+        bitCount   -= take;
         *bitOffset += take;
 
         if(*bitOffset > 7)
@@ -140,7 +140,7 @@ f_internal void makeCanonicalCodes
 
     for(uint16_t symbol = 0; symbol < symbolCount; ++symbol)
     {
-        uint8_t length = lengths[symbol];
+        uint16_t length = lengths[symbol];
 
         codes[symbol].symbol = symbol;
         codes[symbol].length = length;
@@ -172,9 +172,9 @@ f_internal void insertCode
     HuffmanTree *tree,
     uint16_t    code,
     uint16_t    symbol,
-    uint8_t     length
+    uint16_t    length
 ){
-    PD_DEBUG("inserting into tree: code: %u, symbol: %u, length: %u",
+    PD_DEBUG("inserting into tree: code: %3u, symbol: %3u, length: %3u",
              code, symbol, length);
 
     int32_t node = 0;
@@ -387,16 +387,19 @@ uint64_t dsReadDeflate
                     // literal length
                     litDistLengths[j] = (uint8_t)symbol;
                     previousLength    = (uint8_t)symbol;
-
-                    PD_DEBUG("read literal length of %u from compressed tree.", symbol);
+                    PD_ASSERT(j < totalLength, "index into litDistLengths "
+                              "%u exceeds maximum of %u.", j, totalLength)
                 }
                 else if(symbol == 16)
                 {
                     // repeat previous length, 3-6 times
                     uint8_t repeat = 3 + (uint8_t)readBits(src, 2, &bitOffset, &i);
-
-                    PD_DEBUG("read repeat previous length (%u) %u times.",
-                             previousLength, repeat);
+                    for(uint8_t k = 0; k < repeat; ++k)
+                    {
+                        litDistLengths[j + k] = previousLength;
+                        PD_ASSERT(j + k < totalLength, "index into litDistLengths "
+                                  "%u exceeds maximum of %u.", j, totalLength)
+                    }
                 }
                 else if(symbol == 17)
                 {
@@ -404,10 +407,10 @@ uint64_t dsReadDeflate
                     uint8_t repeat = 3 + (uint8_t)readBits(src, 3, &bitOffset, &i);
                     for(uint8_t k = 0; k < repeat; ++k)
                     {
-                        litDistLengths[j++] = 0;
+                        litDistLengths[j + k] = 0;
+                        PD_ASSERT(j + k < totalLength, "index into litDistLengths "
+                                  "%u exceeds maximum of %u.", j, totalLength)
                     }
-
-                    PD_DEBUG("read repeat 0 %u times.", repeat);
                 }
                 else if(symbol == 18)
                 {
@@ -415,10 +418,10 @@ uint64_t dsReadDeflate
                     uint8_t repeat = 11 + (uint8_t)readBits(src, 7, &bitOffset, &i);
                     for(uint8_t k = 0; k < repeat; ++k)
                     {
-                        litDistLengths[j++] = 0;
+                        litDistLengths[j + k] = 0;
+                        PD_ASSERT(j + k < totalLength, "index into litDistLengths "
+                                  "%u exceeds maximum of %u.", j, totalLength)
                     }
-
-                    PD_DEBUG("read repeat 0 %u times.", repeat);
                 }
             }
 

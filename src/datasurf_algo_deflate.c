@@ -362,8 +362,9 @@ uint64_t dsReadDeflate
                          compressLengths[symbol], symbol);
             }
 
-            uint16_t distanceLengthOffset = dBlock.HDIST + 1;
-            uint16_t totalLength = dBlock.HLIT + dBlock.HDIST + 258;
+            uint16_t litLenTreeLength = dBlock.HLIT  + 257;
+            uint8_t  distTreeLength   = dBlock.HDIST + 1;
+            uint16_t totalLength      = litLenTreeLength + distTreeLength;
             uint16_t litDistLengths[totalLength];
             uint16_t previousLength = 0;
 
@@ -400,6 +401,7 @@ uint64_t dsReadDeflate
                         PD_ASSERT(j + k < totalLength, "index into litDistLengths "
                                   "%u exceeds maximum of %u.", j, totalLength)
                     }
+                    j += repeat - 1;
                 }
                 else if(symbol == 17)
                 {
@@ -411,6 +413,7 @@ uint64_t dsReadDeflate
                         PD_ASSERT(j + k < totalLength, "index into litDistLengths "
                                   "%u exceeds maximum of %u.", j, totalLength)
                     }
+                    j += repeat - 1;
                 }
                 else if(symbol == 18)
                 {
@@ -422,14 +425,15 @@ uint64_t dsReadDeflate
                         PD_ASSERT(j + k < totalLength, "index into litDistLengths "
                                   "%u exceeds maximum of %u.", j, totalLength)
                     }
+                    j += repeat - 1;
                 }
             }
 
             HuffmanTree literalLengthTree = {0};
             HuffmanTree distanceTree      = {0};
-            buildTree(&literalLengthTree, litDistLengths, distanceLengthOffset);
-            buildTree(&distanceTree, litDistLengths + distanceLengthOffset,
-                      totalLength - distanceLengthOffset);
+            buildTree(&literalLengthTree, litDistLengths, litLenTreeLength);
+            buildTree(&distanceTree, &litDistLengths[litLenTreeLength],
+                      distTreeLength);
 
             // now that we have the other two trees constructed, we can use those to
             // decode the actual data. yes?

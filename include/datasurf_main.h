@@ -21,9 +21,6 @@ extern uint64_t dsReadDeflate
 (
     const uint8_t *src,
     uint8_t       *dst,
-    uint8_t       CINFO,
-    uint8_t       FCHECK,
-    uint8_t       FDICT,
     uint32_t      *checksum
 );
 

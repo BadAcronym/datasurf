@@ -264,9 +264,6 @@ uint64_t dsReadDeflate
 (
     const uint8_t *src,
     uint8_t       *dst,
-    uint8_t       CINFO,
-    uint8_t       FCHECK,
-    uint8_t       FDICT,
     uint32_t      *checksum
 ){
     uint8_t *og = dst;
@@ -295,6 +292,7 @@ uint64_t dsReadDeflate
         if(block.BTYPE == BTYPE_UNCROMPRESSED)
         {
             // skip to next byte
+            bitOffset = 0;
             ++i;
             uint16_t LEN  = src[i] + (uint16_t)(src[i + 1] << 8);
             i += 2;
@@ -313,13 +311,10 @@ uint64_t dsReadDeflate
 
             for(uint32_t j = 0; j < LEN; ++j)
             {
-                *dst   = *src++;
+                *dst   = src[i++];
                 adlerA = (adlerA + *dst++) % ADLER_PRIME;
                 adlerB = (adlerB + adlerA) % ADLER_PRIME;
-                ++i;
             }
-
-            bitOffset = 0;
         }
         else if(block.BTYPE == BTYPE_STATIC_HUFFMAN)
         {

@@ -63,8 +63,7 @@ bool dsReadZlibPtr
     if(info.FDICT)
     {
         DICTID = *(uint32_t*)(&zlib[2]);
-        compressedBytesRead = dsReadDeflate(&zlib[6], dest, info.CINFO, info.FCHECK, info.FDICT,
-                                  &madeChecksum);
+        compressedBytesRead = dsReadDeflate(&zlib[6], dest, &madeChecksum);
         readChecksum += (uint32_t)zlib[6 + compressedBytesRead] << 24;
         readChecksum += (uint32_t)zlib[7 + compressedBytesRead] << 16;
         readChecksum += (uint32_t)zlib[8 + compressedBytesRead] << 8;
@@ -72,8 +71,7 @@ bool dsReadZlibPtr
     }
     else
     {
-        compressedBytesRead = dsReadDeflate(&zlib[2], dest, info.CINFO, info.FCHECK, info.FDICT,
-                                  &madeChecksum);
+        compressedBytesRead = dsReadDeflate(&zlib[2], dest, &madeChecksum);
         readChecksum += (uint32_t)zlib[2 + compressedBytesRead] << 24;
         readChecksum += (uint32_t)zlib[3 + compressedBytesRead] << 16;
         readChecksum += (uint32_t)zlib[4 + compressedBytesRead] << 8;
@@ -95,6 +93,7 @@ bool dsReadZlibPtr
     {
         PD_ERROR("made checksum (0x%X) does not match the read checksum (0x%X).",
                  madeChecksum, readChecksum);
+
         return false;
     }
 

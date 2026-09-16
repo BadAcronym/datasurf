@@ -143,7 +143,7 @@ int main
             maxCompressedDcode[i * 61 + j] = phrase[j];
         }
     }
-    uint8_t testMaxCompressed[33]  = {0};
+    uint8_t testMaxCompressed[61 * 39]  = {0};
 
     if(!dsReadZlibPtr(maxCompressed, testMaxCompressed))
     {

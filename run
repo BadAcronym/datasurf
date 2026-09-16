@@ -15,6 +15,7 @@ fi
 args_always="-DBUILD_LINUX \
 src/datasurf_test.c \
 src/datasurf_formats.c \
+src/datasurf_huffman.c \
 src/datasurf_algo_deflate.c \
 -Iinclude/ \
 -std=c99 \

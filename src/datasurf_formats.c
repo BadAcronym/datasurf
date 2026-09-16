@@ -19,7 +19,6 @@ typedef union ZLibUnion
     {
         uint8_t CMF;
         uint8_t FLG;
-        uint8_t DICTID;
     }
     og;
 }
@@ -53,7 +52,6 @@ bool dsReadZlibPtr
     PD_DEBUG("FCHECK: %u", info.FCHECK);
     PD_DEBUG("FDICT:  %u", info.FDICT);
     PD_DEBUG("FLEVEL: %u", info.FLEVEL);
-    PD_DEBUG("DICTID: %u", uInfo.og.DICTID);
 
     uint32_t DICTID       = 0;
     uint32_t madeChecksum = 0;

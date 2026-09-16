@@ -58,29 +58,29 @@ bool dsReadZlibPtr
     uint32_t DICTID       = 0;
     uint32_t madeChecksum = 0;
     uint32_t readChecksum = 0;
-    uint64_t bytesRead    = 0;
+    uint64_t compressedBytesRead    = 0;
 
     if(info.FDICT)
     {
         DICTID = *(uint32_t*)(&zlib[2]);
-        bytesRead = dsReadDeflate(&zlib[6], dest, info.CINFO, info.FCHECK, info.FDICT,
+        compressedBytesRead = dsReadDeflate(&zlib[6], dest, info.CINFO, info.FCHECK, info.FDICT,
                                   &madeChecksum);
-        readChecksum += (uint32_t)zlib[6 + bytesRead] << 24;
-        readChecksum += (uint32_t)zlib[7 + bytesRead] << 16;
-        readChecksum += (uint32_t)zlib[8 + bytesRead] << 8;
-        readChecksum += (uint32_t)zlib[9 + bytesRead];
+        readChecksum += (uint32_t)zlib[6 + compressedBytesRead] << 24;
+        readChecksum += (uint32_t)zlib[7 + compressedBytesRead] << 16;
+        readChecksum += (uint32_t)zlib[8 + compressedBytesRead] << 8;
+        readChecksum += (uint32_t)zlib[9 + compressedBytesRead];
     }
     else
     {
-        bytesRead = dsReadDeflate(&zlib[2], dest, info.CINFO, info.FCHECK, info.FDICT,
+        compressedBytesRead = dsReadDeflate(&zlib[2], dest, info.CINFO, info.FCHECK, info.FDICT,
                                   &madeChecksum);
-        readChecksum += (uint32_t)zlib[2 + bytesRead] << 24;
-        readChecksum += (uint32_t)zlib[3 + bytesRead] << 16;
-        readChecksum += (uint32_t)zlib[4 + bytesRead] << 8;
-        readChecksum += (uint32_t)zlib[5 + bytesRead];
+        readChecksum += (uint32_t)zlib[2 + compressedBytesRead] << 24;
+        readChecksum += (uint32_t)zlib[3 + compressedBytesRead] << 16;
+        readChecksum += (uint32_t)zlib[4 + compressedBytesRead] << 8;
+        readChecksum += (uint32_t)zlib[5 + compressedBytesRead];
     }
 
-    if(!bytesRead)
+    if(!compressedBytesRead)
     {
         PD_ERROR("couldn't read data from provided deflate stream.");
         return 0;

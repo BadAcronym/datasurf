@@ -318,6 +318,10 @@ f_internal uint8_t *readBlock_dynamic
         }
     }
 
+    destroyTree(&literalLengthTree);
+    destroyTree(&distanceTree);
+    destroyTree(&encodedTree);
+
     return dst;
 }
 

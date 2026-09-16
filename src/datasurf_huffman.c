@@ -175,6 +175,16 @@ void buildTree
     free(codes);
 }
 
+void destroyTree
+(
+    HuffmanTree *tree
+){
+    if(tree->nodes)
+    {
+        pdArrFree(tree->nodes);
+    }
+}
+
 uint16_t decodeSymbol
 (
     const HuffmanTree *tree,

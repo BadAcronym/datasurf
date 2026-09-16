@@ -48,4 +48,53 @@ typedef struct HuffmanTree
 }
 HuffmanTree;
 
+extern uint16_t readBits
+(
+    const uint8_t *src,
+    uint8_t       bitCount,
+    uint8_t       *bitOffset,
+    uint64_t      *iterator
+);
+
+extern uint16_t reverseBits
+(
+    uint16_t code,
+    uint16_t length
+);
+
+extern void makeCanonicalCodes
+(
+    const uint16_t *lengths,
+    uint16_t       symbolCount,
+    HuffmanCode    *codes
+);
+
+extern void insertCode
+(
+    HuffmanTree *tree,
+    uint16_t    code,
+    uint16_t    symbol,
+    uint16_t    length
+);
+
+extern void buildTree
+(
+    HuffmanTree    *tree,
+    const uint16_t *lengths,
+    uint16_t       symbolCount
+);
+
+extern void destroyTree
+(
+    HuffmanTree *tree
+);
+
+extern uint16_t decodeSymbol
+(
+    const HuffmanTree *tree,
+    const uint8_t     *src,
+    uint8_t           *currBitOffset,
+    uint64_t          *iterator
+);
+
 #endif

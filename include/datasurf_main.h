@@ -7,7 +7,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#define ADLER_PRIME 65521
+#define ADLER_PRIME 65521ULL
 
 extern bool dsReadZlibPtr
 (
@@ -15,6 +15,8 @@ extern bool dsReadZlibPtr
     uint8_t       *dest
 );
 
+// returns the COMPRESSED amount of bytes read,
+// not the uncompressed amount of bytes produced.
 extern uint64_t dsReadDeflate
 (
     const uint8_t *src,

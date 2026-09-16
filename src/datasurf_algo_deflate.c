@@ -257,7 +257,6 @@ f_internal uint16_t decodeSymbol
     for(uint8_t i = 0; i < MAX_CODELEN; ++i)
     {
         uint8_t bit = (uint8_t)readBits(src, 1, currBitOffset, iterator);
-        PD_DEBUG("read singular bit: %u", bit);
         node = tree->nodes[node].children[bit];
 
         if(node < 0)
@@ -341,7 +340,7 @@ uint64_t dsReadDeflate
         }
         else if(block.BTYPE == BTYPE_DYNAMIC_HUFFMAN)
         {
-            DynHuffBlock dBlock        = {0};
+            DynHuffBlock dBlock = {0};
 
             dBlock.HLIT  = (uint8_t)readBits(src, 5, &bitOffset, &i);
             dBlock.HDIST = (uint8_t)readBits(src, 5, &bitOffset, &i);
@@ -435,8 +434,133 @@ uint64_t dsReadDeflate
             buildTree(&distanceTree, &litDistLengths[litLenTreeLength],
                       distTreeLength);
 
+            bool endBlock = false;
+
+            // with the two trees constructed, we can go through them and separate the
+            // data into these arrays. we cannot otherwise decode in one go, because it
+            // requires decoding both trees first, which are variable bitlength symbols.
+
+            uint8_t  literals[litLenTreeLength];
+            uint16_t lengths[distTreeLength];
+            uint16_t distances[distTreeLength];
+            uint16_t litIndex  = 0;
+            uint16_t lenIndex  = 0;
+            uint16_t distIndex = 0;
+
             // now that we have the other two trees constructed, we can use those to
             // decode the actual data. yes?
+            for(uint16_t j = 0; j < litLenTreeLength; ++j)
+            {
+                uint16_t symbol = decodeSymbol(&literalLengthTree, src, &bitOffset, &i);
+
+                PD_ASSERT(symbol < 286, "a symbol of 286 or higher cannot be "
+                          "interpreted for the literal/length tree.");
+
+                if(symbol < 256)
+                {
+                    PD_DEBUG("read literal byte: %c", symbol);
+                    literals[litIndex++] = (uint8_t)symbol;
+                }
+                else if(symbol == 256)
+                {
+                    endBlock = true;
+                    break;
+                }
+                else if(symbol < 265)
+                {
+                    uint16_t length = symbol - 254;
+                    PD_DEBUG("read length: %u", length);
+                    lengths[lenIndex++] = length;
+                }
+                else if(symbol < 269)
+                {
+                    uint8_t extraBits = (uint8_t)readBits(src, 1, &bitOffset, &i);
+                    // length = 11 + symbol - 265 + extraBits?
+                }
+                else if(symbol < 273)
+                {
+                    uint8_t extraBits = (uint8_t)readBits(src, 2, &bitOffset, &i);
+                }
+                else if(symbol < 277)
+                {
+                    uint8_t extraBits = (uint8_t)readBits(src, 3, &bitOffset, &i);
+                }
+                else if(symbol < 281)
+                {
+                    uint8_t extraBits = (uint8_t)readBits(src, 4, &bitOffset, &i);
+                }
+                else if(symbol < 285)
+                {
+                    uint8_t extraBits = (uint8_t)readBits(src, 5, &bitOffset, &i);
+                }
+                else // symbol == 285
+                {
+                    // length = 258
+                }
+            }
+
+            for(uint16_t j = 0; !endBlock && j < distTreeLength; ++j)
+            {
+                uint16_t symbol = decodeSymbol(&distanceTree, src, &bitOffset, &i);
+
+                PD_ASSERT(symbol < 30, "a symbol of 30 or higher cannot be "
+                          "interpreted for the literal/length tree.");
+
+                if(symbol < 4)
+                {
+                }
+                else if(symbol < 6)
+                {
+                    uint8_t extraBits = (uint8_t)readBits(src, 1, &bitOffset, &i);
+                }
+                else if(symbol < 8)
+                {
+                    uint8_t extraBits = (uint8_t)readBits(src, 2, &bitOffset, &i);
+                }
+                else if(symbol < 10)
+                {
+                    uint8_t extraBits = (uint8_t)readBits(src, 3, &bitOffset, &i);
+                }
+                else if(symbol < 12)
+                {
+                    uint8_t extraBits = (uint8_t)readBits(src, 4, &bitOffset, &i);
+                }
+                else if(symbol < 14)
+                {
+                    uint8_t extraBits = (uint8_t)readBits(src, 5, &bitOffset, &i);
+                }
+                else if(symbol < 16)
+                {
+                    uint8_t extraBits = (uint8_t)readBits(src, 6, &bitOffset, &i);
+                }
+                else if(symbol < 18)
+                {
+                    uint8_t extraBits = (uint8_t)readBits(src, 7, &bitOffset, &i);
+                }
+                else if(symbol < 20)
+                {
+                    uint8_t extraBits = (uint8_t)readBits(src, 8, &bitOffset, &i);
+                }
+                else if(symbol < 22)
+                {
+                    uint8_t extraBits = (uint8_t)readBits(src, 9, &bitOffset, &i);
+                }
+                else if(symbol < 24)
+                {
+                    uint8_t extraBits = (uint8_t)readBits(src, 10, &bitOffset, &i);
+                }
+                else if(symbol < 26)
+                {
+                    uint8_t extraBits = (uint8_t)readBits(src, 11, &bitOffset, &i);
+                }
+                else if(symbol < 28)
+                {
+                    uint8_t extraBits = (uint8_t)readBits(src, 12, &bitOffset, &i);
+                }
+                else // symbol < 30
+                {
+                }
+            }
         }
         else // block.BTYPE == BTYPE_RESERVED
         {

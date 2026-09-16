@@ -154,19 +154,6 @@ f_internal void makeCanonicalCodes
     }
 }
 
-f_internal void printTree
-(
-    const HuffmanTree *tree
-){
-    uint16_t treeSize = (uint16_t)pdArrSize(tree->nodes);
-
-    for(uint16_t i = 0; i < treeSize; ++i)
-    {
-        PD_DEBUG("node %u: symbol: %i, children: %i and %i", i, tree->nodes[i].symbol,
-                 tree->nodes[i].children[0], tree->nodes[i].children[1]);
-    }
-}
-
 f_internal void insertCode
 (
     HuffmanTree *tree,
@@ -174,9 +161,6 @@ f_internal void insertCode
     uint16_t    symbol,
     uint16_t    length
 ){
-    PD_DEBUG("inserting into tree: code: %3u, symbol: %3u, length: %3u",
-             code, symbol, length);
-
     int32_t node = 0;
 
     for(uint8_t i = 0; i < length; ++i)
@@ -285,6 +269,8 @@ uint64_t dsReadDeflate
     uint8_t       FDICT,
     uint32_t      *checksum
 ){
+    uint8_t  *og = dst;
+
     uint8_t  bitOffset = 0;
     uint32_t adlerA    = 1;
     uint32_t adlerB    = 0;
@@ -327,10 +313,10 @@ uint64_t dsReadDeflate
 
             for(uint32_t j = 0; j < LEN; ++j)
             {
-                dst[j] = src[i];
-                adlerA = (adlerA + dst[j]) % ADLER_PRIME;
+                *dst   = *src++;
+                adlerA = (adlerA + *dst)   % ADLER_PRIME;
                 adlerB = (adlerB + adlerA) % ADLER_PRIME;
-                ++i;
+                ++dst;
             }
         }
         else if(block.BTYPE == BTYPE_STATIC_HUFFMAN)
@@ -357,8 +343,6 @@ uint64_t dsReadDeflate
             {
                 uint8_t symbol = dynHuffCodelenghOrder[j];
                 compressLengths[symbol] = (uint8_t)readBits(src, 3, &bitOffset, &i);
-                PD_DEBUG("read code length %u for symbol %u.",
-                         compressLengths[symbol], symbol);
             }
 
             uint16_t litLenTreeLength = dBlock.HLIT  + 257;
@@ -372,8 +356,6 @@ uint64_t dsReadDeflate
             // codes for the other two trees.
             HuffmanTree encodedTree = {0};
             buildTree(&encodedTree, compressLengths, 19);
-
-            printTree(&encodedTree);
 
             for(uint16_t j = 0; j < totalLength; ++j)
             {
@@ -441,9 +423,11 @@ uint64_t dsReadDeflate
             // requires decoding both trees first, which are variable bitlength symbols.
 
             uint8_t  literals[litLenTreeLength];
-            uint16_t lengths[distTreeLength];
-            uint16_t distances[distTreeLength];
+            uint16_t marks[litLenTreeLength];
+            uint16_t lengths[litLenTreeLength];
+            uint32_t distances[litLenTreeLength];
             uint16_t litIndex  = 0;
+            uint16_t markIndex = 0;
             uint16_t lenIndex  = 0;
             uint16_t distIndex = 0;
 
@@ -458,7 +442,6 @@ uint64_t dsReadDeflate
 
                 if(symbol < 256)
                 {
-                    PD_DEBUG("read literal byte: %c", symbol);
                     literals[litIndex++] = (uint8_t)symbol;
                 }
                 else if(symbol == 256)
@@ -468,54 +451,49 @@ uint64_t dsReadDeflate
                 }
                 else if(symbol < 265)
                 {
-                    uint16_t length = symbol - 254;
-                    PD_DEBUG("read length: %u", length);
+                    uint16_t length     = symbol - 254;
                     lengths[lenIndex++] = length;
+                    marks[markIndex++]  = litIndex;
                 }
                 else if(symbol < 269)
                 {
-                    uint8_t  extraBits = (uint8_t)readBits(src, 1, &bitOffset, &i);
-                    uint16_t length    = 11 + extraBits + 2 * (symbol - 265);
-                    PD_DEBUG("read length: %u. symbol was %u, extra bits %u.",
-                             length, symbol, extraBits);
+                    uint8_t  extraBits  = (uint8_t)readBits(src, 1, &bitOffset, &i);
+                    uint16_t length     = 11 + extraBits + 2 * (symbol - 265);
                     lengths[lenIndex++] = length;
+                    marks[markIndex++]  = litIndex;
                 }
                 else if(symbol < 273)
                 {
-                    uint8_t  extraBits = (uint8_t)readBits(src, 2, &bitOffset, &i);
-                    uint16_t length    = 19 + extraBits + 4 * (symbol - 269);
-                    PD_DEBUG("read length: %u. symbol was %u, extra bits %u.",
-                             length, symbol, extraBits);
+                    uint8_t  extraBits  = (uint8_t)readBits(src, 2, &bitOffset, &i);
+                    uint16_t length     = 19 + extraBits + 4 * (symbol - 269);
                     lengths[lenIndex++] = length;
+                    marks[markIndex++]  = litIndex;
                 }
                 else if(symbol < 277)
                 {
-                    uint8_t extraBits = (uint8_t)readBits(src, 3, &bitOffset, &i);
-                    uint16_t length   = 35 + extraBits + 8 * (symbol - 273);
-                    PD_DEBUG("read length: %u. symbol was %u, extra bits %u.",
-                             length, symbol, extraBits);
+                    uint8_t extraBits   = (uint8_t)readBits(src, 3, &bitOffset, &i);
+                    uint16_t length     = 35 + extraBits + 8 * (symbol - 273);
                     lengths[lenIndex++] = length;
+                    marks[markIndex++]  = litIndex;
                 }
                 else if(symbol < 281)
                 {
-                    uint8_t extraBits = (uint8_t)readBits(src, 4, &bitOffset, &i);
-                    uint16_t length   = 67 + extraBits + 16 * (symbol - 277);
-                    PD_DEBUG("read length: %u. symbol was %u, extra bits %u.",
-                             length, symbol, extraBits);
+                    uint8_t extraBits   = (uint8_t)readBits(src, 4, &bitOffset, &i);
+                    uint16_t length     = 67 + extraBits + 16 * (symbol - 277);
                     lengths[lenIndex++] = length;
+                    marks[markIndex++]  = litIndex;
                 }
                 else if(symbol < 285)
                 {
-                    uint8_t extraBits = (uint8_t)readBits(src, 5, &bitOffset, &i);
-                    uint16_t length   = 131 + extraBits + 32 * (symbol - 281);
-                    PD_DEBUG("read length: %u. symbol was %u, extra bits %u.",
-                             length, symbol, extraBits);
+                    uint8_t extraBits   = (uint8_t)readBits(src, 5, &bitOffset, &i);
+                    uint16_t length     = 131 + extraBits + 32 * (symbol - 281);
                     lengths[lenIndex++] = length;
+                    marks[markIndex++]  = litIndex;
                 }
                 else // symbol == 285
                 {
-                    PD_DEBUG("read length: 258.");
                     lengths[lenIndex++] = 258;
+                    marks[markIndex++]  = litIndex;
                 }
             }
 
@@ -528,58 +506,125 @@ uint64_t dsReadDeflate
 
                 if(symbol < 4)
                 {
+                    distances[distIndex++] = symbol + 1;
                 }
                 else if(symbol < 6)
                 {
-                    uint8_t extraBits = (uint8_t)readBits(src, 1, &bitOffset, &i);
+                    uint8_t  extraBits     = (uint8_t)readBits(src, 1, &bitOffset, &i);
+                    uint32_t distance      = 5 + extraBits + 2 * (symbol - 4);
+                    distances[distIndex++] = distance;
                 }
                 else if(symbol < 8)
                 {
-                    uint8_t extraBits = (uint8_t)readBits(src, 2, &bitOffset, &i);
+                    uint8_t  extraBits     = (uint8_t)readBits(src, 2, &bitOffset, &i);
+                    uint32_t distance      = 9 + extraBits + 4 * (symbol - 6);
+                    distances[distIndex++] = distance;
                 }
                 else if(symbol < 10)
                 {
-                    uint8_t extraBits = (uint8_t)readBits(src, 3, &bitOffset, &i);
+                    uint8_t  extraBits     = (uint8_t)readBits(src, 3, &bitOffset, &i);
+                    uint32_t distance      = 17 + extraBits + 8 * (symbol - 8);
+                    distances[distIndex++] = distance;
                 }
                 else if(symbol < 12)
                 {
-                    uint8_t extraBits = (uint8_t)readBits(src, 4, &bitOffset, &i);
+                    uint8_t  extraBits     = (uint8_t)readBits(src, 4, &bitOffset, &i);
+                    uint32_t distance      = 33 + extraBits + 16 * (symbol - 10);
+                    distances[distIndex++] = distance;
                 }
                 else if(symbol < 14)
                 {
-                    uint8_t extraBits = (uint8_t)readBits(src, 5, &bitOffset, &i);
+                    uint8_t  extraBits     = (uint8_t)readBits(src, 5, &bitOffset, &i);
+                    uint32_t distance      = 65 + extraBits + 32 * (symbol - 12);
+                    distances[distIndex++] = distance;
                 }
                 else if(symbol < 16)
                 {
-                    uint8_t extraBits = (uint8_t)readBits(src, 6, &bitOffset, &i);
+                    uint8_t  extraBits     = (uint8_t)readBits(src, 6, &bitOffset, &i);
+                    uint32_t distance      = 129 + extraBits + 64 * (symbol - 14);
+                    distances[distIndex++] = distance;
                 }
                 else if(symbol < 18)
                 {
-                    uint8_t extraBits = (uint8_t)readBits(src, 7, &bitOffset, &i);
+                    uint8_t  extraBits     = (uint8_t)readBits(src, 7, &bitOffset, &i);
+                    uint32_t distance      = 257 + extraBits + 128 * (symbol - 16);
+                    distances[distIndex++] = distance;
                 }
                 else if(symbol < 20)
                 {
-                    uint8_t extraBits = (uint8_t)readBits(src, 8, &bitOffset, &i);
+                    uint8_t  extraBits     = (uint8_t)readBits(src, 8, &bitOffset, &i);
+                    uint32_t distance      = 513 + extraBits + 256 * (symbol - 18);
+                    distances[distIndex++] = distance;
                 }
                 else if(symbol < 22)
                 {
-                    uint8_t extraBits = (uint8_t)readBits(src, 9, &bitOffset, &i);
+                    uint8_t  extraBits     = (uint8_t)readBits(src, 9, &bitOffset, &i);
+                    uint32_t distance      = 1025 + extraBits + 512 * (symbol - 20);
+                    distances[distIndex++] = distance;
                 }
                 else if(symbol < 24)
                 {
-                    uint8_t extraBits = (uint8_t)readBits(src, 10, &bitOffset, &i);
+                    uint8_t  extraBits     = (uint8_t)readBits(src, 10, &bitOffset, &i);
+                    uint32_t distance      = 2049 + extraBits + 1024 * (symbol - 22);
+                    distances[distIndex++] = distance;
                 }
                 else if(symbol < 26)
                 {
-                    uint8_t extraBits = (uint8_t)readBits(src, 11, &bitOffset, &i);
+                    uint8_t  extraBits     = (uint8_t)readBits(src, 11, &bitOffset, &i);
+                    uint32_t distance      = 4097 + extraBits + 2048 * (symbol - 24);
+                    distances[distIndex++] = distance;
                 }
                 else if(symbol < 28)
                 {
-                    uint8_t extraBits = (uint8_t)readBits(src, 12, &bitOffset, &i);
+                    uint8_t  extraBits     = (uint8_t)readBits(src, 12, &bitOffset, &i);
+                    uint32_t distance      = 8193 + extraBits + 4096 * (symbol - 26);
+                    distances[distIndex++] = distance;
                 }
                 else // symbol < 30
                 {
+                    uint8_t  extraBits     = (uint8_t)readBits(src, 13, &bitOffset, &i);
+                    uint32_t distance      = 16385 + extraBits + 8192 * (symbol - 28);
+                    distances[distIndex++] = distance;
                 }
+            }
+
+            markIndex = 0;
+            distIndex = 0;
+            lenIndex  = 0;
+
+            // now, believe it or not, we can decode the actual data.
+            for(uint16_t j = 0; j < litLenTreeLength; ++j)
+            {
+                if(j == marks[markIndex])
+                {
+                    uint32_t distance = distances[distIndex++];
+                    uint16_t length   = lengths[lenIndex++];
+
+                    // FIXME: I think i need to use distance not into the literals, but
+                    // into the actual decoded buffer and copy from there.
+
+                    for(uint16_t l = 0; l < length; ++l)
+                    {
+                        PD_ASSERT(j - distance + l < litLenTreeLength,
+                                  "trying to access beyond literal buffer end (%u): %u",
+                                  litLenTreeLength, j - distance + l);
+
+                        PD_ASSERT(j - distance + l > 0,
+                                  "trying to go too far back: %u bytes.",
+                                  j - distance + l);
+                        *dst   = literals[j - distance + l];
+                        adlerA = (adlerA + *dst)   % ADLER_PRIME;
+                        adlerB = (adlerB + adlerA) % ADLER_PRIME;
+                        ++dst;
+                    }
+
+                    ++markIndex;
+                }
+
+                *dst   = literals[j];
+                adlerA = (adlerA + *dst)   % ADLER_PRIME;
+                adlerB = (adlerB + adlerA) % ADLER_PRIME;
+                ++dst;
             }
         }
         else // block.BTYPE == BTYPE_RESERVED
@@ -587,11 +632,9 @@ uint64_t dsReadDeflate
             PD_ERROR("BTYPE of 3 is reserved.");
             return 0;
         }
-
-        ++src;
     }
 
     *checksum = (adlerB << 16) | adlerA;
-    PD_DEBUG("read a total of %lu bytes.", i - 1);
-    return i - 1;
+    PD_DEBUG("read a total of %lu bytes.", dst - og);
+    return (uint64_t)(dst - og);
 }

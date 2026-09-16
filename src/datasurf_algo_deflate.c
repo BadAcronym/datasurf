@@ -474,28 +474,48 @@ uint64_t dsReadDeflate
                 }
                 else if(symbol < 269)
                 {
-                    uint8_t extraBits = (uint8_t)readBits(src, 1, &bitOffset, &i);
-                    // length = 11 + symbol - 265 + extraBits?
+                    uint8_t  extraBits = (uint8_t)readBits(src, 1, &bitOffset, &i);
+                    uint16_t length    = 11 + extraBits + 2 * (symbol - 265);
+                    PD_DEBUG("read length: %u. symbol was %u, extra bits %u.",
+                             length, symbol, extraBits);
+                    lengths[lenIndex++] = length;
                 }
                 else if(symbol < 273)
                 {
-                    uint8_t extraBits = (uint8_t)readBits(src, 2, &bitOffset, &i);
+                    uint8_t  extraBits = (uint8_t)readBits(src, 2, &bitOffset, &i);
+                    uint16_t length    = 19 + extraBits + 4 * (symbol - 269);
+                    PD_DEBUG("read length: %u. symbol was %u, extra bits %u.",
+                             length, symbol, extraBits);
+                    lengths[lenIndex++] = length;
                 }
                 else if(symbol < 277)
                 {
                     uint8_t extraBits = (uint8_t)readBits(src, 3, &bitOffset, &i);
+                    uint16_t length   = 35 + extraBits + 8 * (symbol - 273);
+                    PD_DEBUG("read length: %u. symbol was %u, extra bits %u.",
+                             length, symbol, extraBits);
+                    lengths[lenIndex++] = length;
                 }
                 else if(symbol < 281)
                 {
                     uint8_t extraBits = (uint8_t)readBits(src, 4, &bitOffset, &i);
+                    uint16_t length   = 67 + extraBits + 16 * (symbol - 277);
+                    PD_DEBUG("read length: %u. symbol was %u, extra bits %u.",
+                             length, symbol, extraBits);
+                    lengths[lenIndex++] = length;
                 }
                 else if(symbol < 285)
                 {
                     uint8_t extraBits = (uint8_t)readBits(src, 5, &bitOffset, &i);
+                    uint16_t length   = 131 + extraBits + 32 * (symbol - 281);
+                    PD_DEBUG("read length: %u. symbol was %u, extra bits %u.",
+                             length, symbol, extraBits);
+                    lengths[lenIndex++] = length;
                 }
                 else // symbol == 285
                 {
-                    // length = 258
+                    PD_DEBUG("read length: 258.");
+                    lengths[lenIndex++] = 258;
                 }
             }
 

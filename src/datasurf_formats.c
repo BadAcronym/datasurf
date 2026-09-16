@@ -58,7 +58,7 @@ bool dsReadZlibPtr
     uint32_t DICTID       = 0;
     uint32_t madeChecksum = 0;
     uint32_t readChecksum = 0;
-    uint64_t compressedBytesRead    = 0;
+    uint64_t compressedBytesRead = 0;
 
     if(info.FDICT)
     {
@@ -89,6 +89,7 @@ bool dsReadZlibPtr
     PD_DEBUG("DICTID: 0x%X", DICTID);
     PD_DEBUG("made checksum: 0x%X", madeChecksum);
     PD_DEBUG("read checksum: 0x%X", readChecksum);
+    PD_DEBUG("read a total of %lu compressed bytes.", compressedBytesRead);
 
     if(madeChecksum != readChecksum)
     {

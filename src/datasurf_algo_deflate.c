@@ -316,7 +316,10 @@ uint64_t dsReadDeflate
                 *dst   = *src++;
                 adlerA = (adlerA + *dst++) % ADLER_PRIME;
                 adlerB = (adlerB + adlerA) % ADLER_PRIME;
+                ++i;
             }
+
+            bitOffset = 0;
         }
         else if(block.BTYPE == BTYPE_STATIC_HUFFMAN)
         {
@@ -583,6 +586,5 @@ uint64_t dsReadDeflate
     }
 
     *checksum = (adlerB << 16) | adlerA;
-    PD_DEBUG("read a total of %lu bytes.", i - 1);
     return i - 1;
 }

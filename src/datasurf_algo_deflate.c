@@ -8,6 +8,166 @@ const uint8_t dynHuffCodelenghOrder[19] =
     16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
 };
 
+f_internal uint8_t *decodeHuffmanTrees
+(
+    HuffmanTree   *litLenTree,
+    HuffmanTree   *distanceTree,
+    uint16_t      readLength,
+    const uint8_t *src,
+    uint8_t       *dst,
+    uint8_t       *og,
+    uint8_t       *bitOffset,
+    uint64_t      *iterator,
+    uint32_t      *adlerA,
+    uint32_t      *adlerB
+){
+    for(uint16_t j = 0; j < readLength; ++j)
+    {
+        uint16_t symbol = decodeSymbol(litLenTree, src, bitOffset, iterator);
+
+        PD_ASSERT(symbol < 286, "a symbol of 286 or higher cannot be "
+                  "interpreted for the literal/length tree.");
+
+        if(symbol < 256)
+        {
+            *dst    = (uint8_t)symbol;
+            *adlerA = (*adlerA + *dst++)  % ADLER_PRIME;
+            *adlerB = (*adlerB + *adlerA) % ADLER_PRIME;
+            continue;
+        }
+        else if(symbol == 256)
+        {
+            PD_DEBUG("ending dynamic huffman block.");
+            return dst;
+        }
+
+        uint16_t length = 0;
+
+        if(symbol < 265)
+        {
+            length = symbol - 254;
+        }
+        else if(symbol < 269)
+        {
+            uint8_t extraBits = (uint8_t)readBits(src, 1, bitOffset, iterator);
+            length = 11 + extraBits + 2 * (symbol - 265);
+        }
+        else if(symbol < 273)
+        {
+            uint8_t extraBits = (uint8_t)readBits(src, 2, bitOffset, iterator);
+            length = 19 + extraBits + 4 * (symbol - 269);
+        }
+        else if(symbol < 277)
+        {
+            uint8_t extraBits = (uint8_t)readBits(src, 3, bitOffset, iterator);
+            length = 35 + extraBits + 8 * (symbol - 273);
+        }
+        else if(symbol < 281)
+        {
+            uint8_t extraBits = (uint8_t)readBits(src, 4, bitOffset, iterator);
+            length = 67 + extraBits + 16 * (symbol - 277);
+        }
+        else if(symbol < 285)
+        {
+            uint8_t extraBits = (uint8_t)readBits(src, 5, bitOffset, iterator);
+            length = 131 + extraBits + 32 * (symbol - 281);
+        }
+        else // symbol == 285
+        {
+            length = 258;
+        }
+
+        symbol = decodeSymbol(distanceTree, src, bitOffset, iterator);
+
+        PD_ASSERT(symbol < 30, "a symbol of 30 or higher cannot be "
+                  "interpreted for the distance tree.");
+
+        uint32_t distance = 0;
+
+        if(symbol < 4)
+        {
+            distance = symbol + 1;
+        }
+        else if(symbol < 6)
+        {
+            uint8_t extraBits = (uint8_t)readBits(src, 1, bitOffset, iterator);
+            distance = 5 + extraBits + 2 * (symbol - 4);
+        }
+        else if(symbol < 8)
+        {
+            uint8_t extraBits = (uint8_t)readBits(src, 2, bitOffset, iterator);
+            distance = 9 + extraBits + 4 * (symbol - 6);
+        }
+        else if(symbol < 10)
+        {
+            uint8_t extraBits = (uint8_t)readBits(src, 3, bitOffset, iterator);
+            distance = 17 + extraBits + 8 * (symbol - 8);
+        }
+        else if(symbol < 12)
+        {
+            uint8_t extraBits = (uint8_t)readBits(src, 4, bitOffset, iterator);
+            distance = 33 + extraBits + 16 * (symbol - 10);
+        }
+        else if(symbol < 14)
+        {
+            uint8_t extraBits = (uint8_t)readBits(src, 5, bitOffset, iterator);
+            distance = 65 + extraBits + 32 * (symbol - 12);
+        }
+        else if(symbol < 16)
+        {
+            uint8_t extraBits = (uint8_t)readBits(src, 6, bitOffset, iterator);
+            distance = 129 + extraBits + 64 * (symbol - 14);
+        }
+        else if(symbol < 18)
+        {
+            uint8_t extraBits = (uint8_t)readBits(src, 7, bitOffset, iterator);
+            distance = 257 + extraBits + 128 * (symbol - 16);
+        }
+        else if(symbol < 20)
+        {
+            uint8_t extraBits = (uint8_t)readBits(src, 8, bitOffset, iterator);
+            distance = 513 + extraBits + 256 * (symbol - 18);
+        }
+        else if(symbol < 22)
+        {
+            uint8_t extraBits = (uint8_t)readBits(src, 9, bitOffset, iterator);
+            distance = 1025 + extraBits + 512 * (symbol - 20);
+        }
+        else if(symbol < 24)
+        {
+            uint8_t extraBits = (uint8_t)readBits(src, 10, bitOffset, iterator);
+            distance = 2049 + extraBits + 1024 * (symbol - 22);
+        }
+        else if(symbol < 26)
+        {
+            uint8_t extraBits = (uint8_t)readBits(src, 11, bitOffset, iterator);
+            distance = 4097 + extraBits + 2048 * (symbol - 24);
+        }
+        else if(symbol < 28)
+        {
+            uint8_t extraBits = (uint8_t)readBits(src, 12, bitOffset, iterator);
+            distance = 8193 + extraBits + 4096 * (symbol - 26);
+        }
+        else // symbol < 30
+        {
+            uint8_t extraBits = (uint8_t)readBits(src, 13, bitOffset, iterator);
+            distance  = 16385 + extraBits + 8192 * (symbol - 28);
+        }
+
+        PD_ASSERT(distance - 1 < dst - og, "trying to go too far back: %u "
+                  "(max %lu).", distance, (uint64_t)(dst - og));
+
+        for(uint16_t l = 0; l < length; ++l)
+        {
+            *dst    = *(dst - distance);
+            *adlerA = (*adlerA + *dst++)  % ADLER_PRIME;
+            *adlerB = (*adlerB + *adlerA) % ADLER_PRIME;
+        }
+    }
+
+    return dst;
+}
+
 f_internal uint8_t *readBlock_uncompressed
 (
     const uint8_t *src,
@@ -50,15 +210,47 @@ f_internal uint8_t *readBlock_static
 (
     const uint8_t *src,
     uint8_t       *dst,
+    uint8_t       *og,
     uint8_t       *bitOffset,
     uint64_t      *iterator,
     uint32_t      *adlerA,
     uint32_t      *adlerB
 ){
-    // for now
-    PD_ERROR("static huffman block not implemented.");
-    return 0;
-    //
+    uint16_t litLenLengths[288] = {0};
+
+    for(uint16_t i = 0; i < 144; ++i)
+    {
+        litLenLengths[i] = 8;
+    }
+    for(uint16_t i = 144; i < 256; ++i)
+    {
+        litLenLengths[i] = 9;
+    }
+    for(uint16_t i = 256; i < 280; ++i)
+    {
+        litLenLengths[i] = 7;
+    }
+    for(uint16_t i = 280; i < 288; ++i)
+    {
+        litLenLengths[i] = 8;
+    }
+    uint16_t distLengths[32] = {0};
+    for(uint16_t i = 0; i < 32; ++i)
+    {
+        distLengths[i] = 5;
+    }
+
+    HuffmanTree literalLengthTree = {0};
+    HuffmanTree distanceTree      = {0};
+
+    buildTree(&literalLengthTree, litLenLengths, 288);
+    buildTree(&distanceTree, distLengths, 32);
+
+    dst = decodeHuffmanTrees(&literalLengthTree, &distanceTree, 288 + 32,
+                             src, dst, og, bitOffset, iterator, adlerA, adlerB);
+
+    destroyTree(&literalLengthTree);
+    destroyTree(&distanceTree);
 
     return dst;
 }
@@ -165,8 +357,6 @@ f_internal uint8_t *readBlock_dynamic
     buildTree(&distanceTree, &litDistLengths[litLenTreeLength],
               distTreeLength);
 
-    bool endBlock = false;
-
     // with the two trees constructed, we can go through them and finally decode
     // the data! since it's actually interleaved, like this:
     // ...
@@ -175,150 +365,8 @@ f_internal uint8_t *readBlock_dynamic
     // literal
     // ...
 
-    for(uint16_t j = 0; !endBlock && j < totalLength; ++j)
-    {
-        uint16_t symbol = decodeSymbol(&literalLengthTree, src, bitOffset, iterator);
-
-        PD_ASSERT(symbol < 286, "a symbol of 286 or higher cannot be "
-                  "interpreted for the literal/length tree.");
-
-        if(symbol < 256)
-        {
-            *dst    = (uint8_t)symbol;
-            *adlerA = (*adlerA + *dst++)  % ADLER_PRIME;
-            *adlerB = (*adlerB + *adlerA) % ADLER_PRIME;
-            continue;
-        }
-        else if(symbol == 256)
-        {
-            PD_DEBUG("ending dynamic huffman block.");
-            endBlock = true;
-            break;
-        }
-
-        uint16_t length = 0;
-
-        if(symbol < 265)
-        {
-            length = symbol - 254;
-        }
-        else if(symbol < 269)
-        {
-            uint8_t extraBits = (uint8_t)readBits(src, 1, bitOffset, iterator);
-            length = 11 + extraBits + 2 * (symbol - 265);
-        }
-        else if(symbol < 273)
-        {
-            uint8_t extraBits = (uint8_t)readBits(src, 2, bitOffset, iterator);
-            length = 19 + extraBits + 4 * (symbol - 269);
-        }
-        else if(symbol < 277)
-        {
-            uint8_t extraBits = (uint8_t)readBits(src, 3, bitOffset, iterator);
-            length = 35 + extraBits + 8 * (symbol - 273);
-        }
-        else if(symbol < 281)
-        {
-            uint8_t extraBits = (uint8_t)readBits(src, 4, bitOffset, iterator);
-            length = 67 + extraBits + 16 * (symbol - 277);
-        }
-        else if(symbol < 285)
-        {
-            uint8_t extraBits = (uint8_t)readBits(src, 5, bitOffset, iterator);
-            length = 131 + extraBits + 32 * (symbol - 281);
-        }
-        else // symbol == 285
-        {
-            length = 258;
-        }
-
-        symbol = decodeSymbol(&distanceTree, src, bitOffset, iterator);
-
-        PD_ASSERT(symbol < 30, "a symbol of 30 or higher cannot be "
-                  "interpreted for the distance tree.");
-
-        uint32_t distance = 0;
-
-        if(symbol < 4)
-        {
-            distance = symbol + 1;
-        }
-        else if(symbol < 6)
-        {
-            uint8_t extraBits = (uint8_t)readBits(src, 1, bitOffset, iterator);
-            distance = 5 + extraBits + 2 * (symbol - 4);
-        }
-        else if(symbol < 8)
-        {
-            uint8_t extraBits = (uint8_t)readBits(src, 2, bitOffset, iterator);
-            distance = 9 + extraBits + 4 * (symbol - 6);
-        }
-        else if(symbol < 10)
-        {
-            uint8_t extraBits = (uint8_t)readBits(src, 3, bitOffset, iterator);
-            distance = 17 + extraBits + 8 * (symbol - 8);
-        }
-        else if(symbol < 12)
-        {
-            uint8_t extraBits = (uint8_t)readBits(src, 4, bitOffset, iterator);
-            distance = 33 + extraBits + 16 * (symbol - 10);
-        }
-        else if(symbol < 14)
-        {
-            uint8_t extraBits = (uint8_t)readBits(src, 5, bitOffset, iterator);
-            distance = 65 + extraBits + 32 * (symbol - 12);
-        }
-        else if(symbol < 16)
-        {
-            uint8_t extraBits = (uint8_t)readBits(src, 6, bitOffset, iterator);
-            distance = 129 + extraBits + 64 * (symbol - 14);
-        }
-        else if(symbol < 18)
-        {
-            uint8_t extraBits = (uint8_t)readBits(src, 7, bitOffset, iterator);
-            distance = 257 + extraBits + 128 * (symbol - 16);
-        }
-        else if(symbol < 20)
-        {
-            uint8_t extraBits = (uint8_t)readBits(src, 8, bitOffset, iterator);
-            distance = 513 + extraBits + 256 * (symbol - 18);
-        }
-        else if(symbol < 22)
-        {
-            uint8_t extraBits = (uint8_t)readBits(src, 9, bitOffset, iterator);
-            distance = 1025 + extraBits + 512 * (symbol - 20);
-        }
-        else if(symbol < 24)
-        {
-            uint8_t extraBits = (uint8_t)readBits(src, 10, bitOffset, iterator);
-            distance = 2049 + extraBits + 1024 * (symbol - 22);
-        }
-        else if(symbol < 26)
-        {
-            uint8_t extraBits = (uint8_t)readBits(src, 11, bitOffset, iterator);
-            distance = 4097 + extraBits + 2048 * (symbol - 24);
-        }
-        else if(symbol < 28)
-        {
-            uint8_t extraBits = (uint8_t)readBits(src, 12, bitOffset, iterator);
-            distance = 8193 + extraBits + 4096 * (symbol - 26);
-        }
-        else // symbol < 30
-        {
-            uint8_t extraBits = (uint8_t)readBits(src, 13, bitOffset, iterator);
-            distance  = 16385 + extraBits + 8192 * (symbol - 28);
-        }
-
-        PD_ASSERT(distance - 1 < dst - og, "trying to go too far back: %u "
-                  "(max %lu).", distance, (uint64_t)(dst - og));
-
-        for(uint16_t l = 0; l < length; ++l)
-        {
-            *dst    = *(dst - distance);
-            *adlerA = (*adlerA + *dst++)  % ADLER_PRIME;
-            *adlerB = (*adlerB + *adlerA) % ADLER_PRIME;
-        }
-    }
+    dst = decodeHuffmanTrees(&literalLengthTree, &distanceTree, totalLength,
+                             src, dst, og, bitOffset, iterator, adlerA, adlerB);
 
     destroyTree(&literalLengthTree);
     destroyTree(&distanceTree);
@@ -362,7 +410,7 @@ uint64_t dsReadDeflate
         }
         else if(block.BTYPE == BTYPE_STATIC_HUFFMAN)
         {
-            dst = readBlock_static(src, dst, &bitOffset, &i, &adlerA, &adlerB);
+            dst = readBlock_static(src, dst, og, &bitOffset, &i, &adlerA, &adlerB);
         }
         else if(block.BTYPE == BTYPE_DYNAMIC_HUFFMAN)
         {

@@ -142,6 +142,7 @@ f_internal uint8_t *readBlock_dynamic
                           "%u exceeds maximum of %u.", j, totalLength)
             }
             j += repeat - 1;
+            previousLength = 0;
         }
         else if(symbol == 18)
         {
@@ -154,6 +155,7 @@ f_internal uint8_t *readBlock_dynamic
                           "%u exceeds maximum of %u.", j, totalLength)
             }
             j += repeat - 1;
+            previousLength = 0;
         }
     }
 

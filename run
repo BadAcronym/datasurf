@@ -30,8 +30,9 @@ args_debug="-DDEBUG -g -O0"
 args_asan="$args_debug -DASAN \
 -fsanitize=address,leak,undefined \
 -fno-omit-frame-pointer \
--static-libasan \
--O0"
+-static-libasan"
+
+args_trace="$args_debug -DTRACE"
 
 function compile()
 {
@@ -85,8 +86,13 @@ if [[ $build = "asan" ]]
 then
     compile "$args_always $args_asan"
 else
+if [[ $build = "trace" ]]
+then
+    compile "$args_always $args_trace"
+else
     echo -e "\033[31m\nERROR: invalid make config: $build.\033[0m"
     exit 3;
+fi
 fi
 fi
 fi

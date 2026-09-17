@@ -31,6 +31,7 @@ f_internal uint8_t *decodeHuffmanTrees
 
         if(symbol < 256)
         {
+            PD_TRACE("found literal: %c", symbol);
             *dst    = (uint8_t)symbol;
             *adlerA = (*adlerA + *dst++)  % ADLER_PRIME;
             *adlerB = (*adlerB + *adlerA) % ADLER_PRIME;

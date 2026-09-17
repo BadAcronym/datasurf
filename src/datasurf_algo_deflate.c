@@ -93,67 +93,67 @@ f_internal uint8_t *decodeHuffmanTrees
         }
         else if(symbol < 6)
         {
-            uint8_t extraBits = (uint8_t)readBits(src, 1, bitOffset, iterator);
+            uint32_t extraBits = readBits(src, 1, bitOffset, iterator);
             distance = 5 + extraBits + 2 * (symbol - 4);
         }
         else if(symbol < 8)
         {
-            uint8_t extraBits = (uint8_t)readBits(src, 2, bitOffset, iterator);
+            uint32_t extraBits = readBits(src, 2, bitOffset, iterator);
             distance = 9 + extraBits + 4 * (symbol - 6);
         }
         else if(symbol < 10)
         {
-            uint8_t extraBits = (uint8_t)readBits(src, 3, bitOffset, iterator);
+            uint32_t extraBits = readBits(src, 3, bitOffset, iterator);
             distance = 17 + extraBits + 8 * (symbol - 8);
         }
         else if(symbol < 12)
         {
-            uint8_t extraBits = (uint8_t)readBits(src, 4, bitOffset, iterator);
+            uint32_t extraBits = readBits(src, 4, bitOffset, iterator);
             distance = 33 + extraBits + 16 * (symbol - 10);
         }
         else if(symbol < 14)
         {
-            uint8_t extraBits = (uint8_t)readBits(src, 5, bitOffset, iterator);
+            uint32_t extraBits = readBits(src, 5, bitOffset, iterator);
             distance = 65 + extraBits + 32 * (symbol - 12);
         }
         else if(symbol < 16)
         {
-            uint8_t extraBits = (uint8_t)readBits(src, 6, bitOffset, iterator);
+            uint32_t extraBits = readBits(src, 6, bitOffset, iterator);
             distance = 129 + extraBits + 64 * (symbol - 14);
         }
         else if(symbol < 18)
         {
-            uint8_t extraBits = (uint8_t)readBits(src, 7, bitOffset, iterator);
+            uint32_t extraBits = readBits(src, 7, bitOffset, iterator);
             distance = 257 + extraBits + 128 * (symbol - 16);
         }
         else if(symbol < 20)
         {
-            uint8_t extraBits = (uint8_t)readBits(src, 8, bitOffset, iterator);
+            uint32_t extraBits = readBits(src, 8, bitOffset, iterator);
             distance = 513 + extraBits + 256 * (symbol - 18);
         }
         else if(symbol < 22)
         {
-            uint8_t extraBits = (uint8_t)readBits(src, 9, bitOffset, iterator);
+            uint32_t extraBits = readBits(src, 9, bitOffset, iterator);
             distance = 1025 + extraBits + 512 * (symbol - 20);
         }
         else if(symbol < 24)
         {
-            uint8_t extraBits = (uint8_t)readBits(src, 10, bitOffset, iterator);
+            uint32_t extraBits = readBits(src, 10, bitOffset, iterator);
             distance = 2049 + extraBits + 1024 * (symbol - 22);
         }
         else if(symbol < 26)
         {
-            uint8_t extraBits = (uint8_t)readBits(src, 11, bitOffset, iterator);
+            uint32_t extraBits = readBits(src, 11, bitOffset, iterator);
             distance = 4097 + extraBits + 2048 * (symbol - 24);
         }
         else if(symbol < 28)
         {
-            uint8_t extraBits = (uint8_t)readBits(src, 12, bitOffset, iterator);
+            uint32_t extraBits = readBits(src, 12, bitOffset, iterator);
             distance = 8193 + extraBits + 4096 * (symbol - 26);
         }
         else // symbol < 30
         {
-            uint8_t extraBits = (uint8_t)readBits(src, 13, bitOffset, iterator);
+            uint32_t extraBits = readBits(src, 13, bitOffset, iterator);
             distance  = 16385 + extraBits + 8192 * (symbol - 28);
         }
 

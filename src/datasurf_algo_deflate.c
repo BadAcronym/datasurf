@@ -157,22 +157,26 @@ f_internal uint8_t *decodeHuffmanTrees
             distance  = 16385 + extraBits + 8192 * (symbol - 28);
         }
 
-        PD_ASSERT(distance - 1 < dst - og, "trying to go too far back: %u "
-                  "(max %lu).", distance, (uint64_t)(dst - og));
+        uint64_t produced = (uint64_t)(dst - og);
 
-        PD_ASSERT(length - 1 < cap - (uint64_t)(dst - og), "output buffer overflow. "
-                  "length %u too long, max %lu.", length, cap - (uint64_t)(dst - og));
-
-        if((distance > dst - og) || (length > cap - (uint64_t)(dst - og)))
+        if(distance > produced)
         {
+            PD_ERROR("trying to go too far back: %u (max %lu).", distance, produced);
+            return 0;
+        }
+        else if(produced > cap || length > cap - produced)
+        {
+            PD_ERROR("output buffer overflow. length %u too long, max %lu.",
+                     length, cap - produced);
             return 0;
         }
 
-        PD_TRACE("LZ77: (%u, %u)", length, distance);
+        PD_TRACE("LZ77: (length: %u, distance: %u)", length, distance);
 
         for(uint16_t l = 0; l < length; ++l)
         {
-            PD_TRACE("Wrote LZ77: 0x%X", *(dst - distance));
+            PD_TRACE("wrote LZ77: 0x%X <- byte #%lu, source byte #%lu",
+                     *(dst - distance), (dst - og), (dst - og - distance));
             *dst    = *(dst - distance);
             *adlerA = (*adlerA + *dst++)  % ADLER_PRIME;
             *adlerB = (*adlerB + *adlerA) % ADLER_PRIME;

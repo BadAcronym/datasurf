@@ -37,7 +37,7 @@ HuffmanCode;
 typedef struct HuffmanNode
 {
     int16_t symbol;
-    int16_t children[2];
+    int32_t children[2];
 }
 HuffmanNode;
 

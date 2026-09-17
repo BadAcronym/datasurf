@@ -58,8 +58,8 @@ uint16_t reverseBits
         code >>= 1;
     }
 
-    PD_ASSERT(result < (1 << length), "result (length %u) %u >= %u (maximum)",
-              length, 1 << length, result);
+    PD_ASSERT(result < (1u << length), "result (length %u) %u >= %u (maximum)",
+              length, result, 1u << length);
 
     return result;
 }
@@ -99,6 +99,10 @@ void makeCanonicalCodes
         if(length)
         {
             uint16_t canonical = nextCode[length]++;
+
+            PD_ASSERT(canonical < (1u << length), "canonical code overflow: "
+                      "symbol: %u length: %u code: %u", symbol, length, canonical);
+
             codes[symbol].code = reverseBits(canonical, length);
         }
     }
@@ -116,7 +120,7 @@ void insertCode
     for(uint8_t i = 0; i < length; ++i)
     {
         uint8_t bit   = (code >> i) & 1;
-        int16_t child = tree->nodes[node].children[bit];
+        int32_t child = tree->nodes[node].children[bit];
 
         if(child < 0)
         {
@@ -194,7 +198,7 @@ uint16_t decodeSymbol
 ){
     PD_ASSERT(*currBitOffset < 8, "currBitOffset cannot be bigger than 7.");
 
-    int16_t node = 0;
+    int32_t node = 0;
 
     // read bits until the constructed code matches a value in the huffman tree that's
     // used to read the other two huffman trees.

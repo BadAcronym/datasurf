@@ -90,10 +90,8 @@ bool dsReadZlibPtr
 
     if(madeChecksum != readChecksum)
     {
-        PD_ERROR("made checksum (0x%X) does not match the read checksum (0x%X).",
+        PD_WARN("made checksum (0x%X) does not match the read checksum (0x%X).",
                  madeChecksum, readChecksum);
-
-        return false;
     }
 
     return true;

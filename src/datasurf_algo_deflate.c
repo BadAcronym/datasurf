@@ -12,7 +12,6 @@ f_internal uint8_t *decodeHuffmanTrees
 (
     HuffmanTree   *litLenTree,
     HuffmanTree   *distanceTree,
-    uint16_t      readLength,
     const uint8_t *src,
     uint8_t       *dst,
     uint8_t       *og,
@@ -22,7 +21,9 @@ f_internal uint8_t *decodeHuffmanTrees
     uint32_t      *adlerB,
     uint64_t      cap
 ){
-    for(uint16_t j = 0; j < readLength; ++j)
+    PD_DEBUG("decoding max. %lu symbols from huffman tree.", cap);
+
+    for(uint64_t j = 0; j < cap; ++j)
     {
         uint16_t symbol = decodeSymbol(litLenTree, src, bitOffset, iterator);
 
@@ -31,7 +32,7 @@ f_internal uint8_t *decodeHuffmanTrees
 
         if(symbol < 256)
         {
-            PD_TRACE("found literal: %c", symbol);
+            PD_TRACE("wrote literal: 0x%X", symbol);
             *dst    = (uint8_t)symbol;
             *adlerA = (*adlerA + *dst++)  % ADLER_PRIME;
             *adlerB = (*adlerB + *adlerA) % ADLER_PRIME;
@@ -167,8 +168,11 @@ f_internal uint8_t *decodeHuffmanTrees
             return 0;
         }
 
+        PD_TRACE("LZ77: (%u, %u)", length, distance);
+
         for(uint16_t l = 0; l < length; ++l)
         {
+            PD_TRACE("Wrote LZ77: 0x%X", *(dst - distance));
             *dst    = *(dst - distance);
             *adlerA = (*adlerA + *dst++)  % ADLER_PRIME;
             *adlerB = (*adlerB + *adlerA) % ADLER_PRIME;
@@ -267,8 +271,8 @@ f_internal uint8_t *readBlock_static
     buildTree(&literalLengthTree, litLenLengths, 288);
     buildTree(&distanceTree, distLengths, 32);
 
-    dst = decodeHuffmanTrees(&literalLengthTree, &distanceTree, 288 + 32,
-                             src, dst, og, bitOffset, iterator, adlerA, adlerB, cap);
+    dst = decodeHuffmanTrees(&literalLengthTree, &distanceTree, src, dst, og,
+                             bitOffset, iterator, adlerA, adlerB, cap);
 
     destroyTree(&literalLengthTree);
     destroyTree(&distanceTree);
@@ -387,8 +391,8 @@ f_internal uint8_t *readBlock_dynamic
     // literal
     // ...
 
-    dst = decodeHuffmanTrees(&literalLengthTree, &distanceTree, totalLength,
-                             src, dst, og, bitOffset, iterator, adlerA, adlerB, cap);
+    dst = decodeHuffmanTrees(&literalLengthTree, &distanceTree, src, dst, og,
+                             bitOffset, iterator, adlerA, adlerB, cap);
 
     destroyTree(&literalLengthTree);
     destroyTree(&distanceTree);
@@ -397,7 +401,7 @@ f_internal uint8_t *readBlock_dynamic
     return dst;
 }
 
-uint64_t dsReadDeflate
+DeflateInfo dsReadDeflate
 (
     const uint8_t *src,
     uint8_t       *dst,
@@ -412,7 +416,8 @@ uint64_t dsReadDeflate
 
     bool endStream = false;
 
-    DeflateBlock block = {0};
+    DeflateInfo  resultInfo = {0};
+    DeflateBlock block      = {0};
 
     uint64_t i = 0;
     for(; !endStream; ++i)
@@ -429,33 +434,42 @@ uint64_t dsReadDeflate
 
         if(block.BTYPE == BTYPE_UNCROMPRESSED)
         {
+            uint8_t *start = dst;
             dst = readBlock_nohuff(src, dst, og, &bitOffset, &i, &adlerA, &adlerB, cap);
+            resultInfo.bytesWritten += (uint64_t)(dst - start);
         }
         else if(block.BTYPE == BTYPE_STATIC_HUFFMAN)
         {
+            uint8_t *start = dst;
             dst = readBlock_static(src, dst, og, &bitOffset, &i, &adlerA, &adlerB, cap);
+            resultInfo.bytesWritten += (uint64_t)(dst - start);
         }
         else if(block.BTYPE == BTYPE_DYNAMIC_HUFFMAN)
         {
+            uint8_t *start = dst;
             dst = readBlock_dynamic(src, dst, og, &bitOffset, &i, &adlerA, &adlerB, cap);
+            resultInfo.bytesWritten += (uint64_t)(dst - start);
         }
         else // block.BTYPE == BTYPE_RESERVED
         {
             PD_ERROR("BTYPE of 3 is reserved.");
-            return 0;
+            goto result;
         }
 
         if(!dst)
         {
-            return 0;
+            PD_ERROR("dst ptr was set to null. internal error.");
+            goto result;
         }
     }
 
+    *checksum = (adlerB << 16) | adlerA;
+
+result:
     if(bitOffset)
     {
         ++i;
     }
-
-    *checksum = (adlerB << 16) | adlerA;
-    return i - 1;
+    resultInfo.compressedBytesRead = i - 1;
+    return resultInfo;
 }

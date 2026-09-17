@@ -24,7 +24,7 @@ typedef union ZLibUnion
 }
 ZLibUnion;
 
-bool dsReadZlibPtr
+uint64_t dsReadZlibPtr
 (
     const uint8_t *zlib,
     uint8_t       *dest,
@@ -57,36 +57,32 @@ bool dsReadZlibPtr
     // uint32_t DICTID       = 0;
     uint32_t madeChecksum = 0;
     uint32_t readChecksum = 0;
-    uint64_t compressedBytesRead = 0;
+
+    DeflateInfo defInfo = {0};
 
     if(info.FDICT)
     {
         // DICTID = *(uint32_t*)(&zlib[2]);
-        compressedBytesRead = dsReadDeflate(&zlib[6], dest, &madeChecksum, cap);
-        readChecksum += (uint32_t)zlib[6 + compressedBytesRead] << 24;
-        readChecksum += (uint32_t)zlib[7 + compressedBytesRead] << 16;
-        readChecksum += (uint32_t)zlib[8 + compressedBytesRead] << 8;
-        readChecksum += (uint32_t)zlib[9 + compressedBytesRead];
+        defInfo = dsReadDeflate(&zlib[6], dest, &madeChecksum, cap);
+        readChecksum += (uint32_t)zlib[6 + defInfo.compressedBytesRead] << 24;
+        readChecksum += (uint32_t)zlib[7 + defInfo.compressedBytesRead] << 16;
+        readChecksum += (uint32_t)zlib[8 + defInfo.compressedBytesRead] << 8;
+        readChecksum += (uint32_t)zlib[9 + defInfo.compressedBytesRead];
     }
     else
     {
-        compressedBytesRead = dsReadDeflate(&zlib[2], dest, &madeChecksum, cap);
-        readChecksum += (uint32_t)zlib[2 + compressedBytesRead] << 24;
-        readChecksum += (uint32_t)zlib[3 + compressedBytesRead] << 16;
-        readChecksum += (uint32_t)zlib[4 + compressedBytesRead] << 8;
-        readChecksum += (uint32_t)zlib[5 + compressedBytesRead];
-    }
-
-    if(!compressedBytesRead)
-    {
-        PD_ERROR("couldn't read data from provided deflate stream.");
-        return 0;
+        defInfo = dsReadDeflate(&zlib[2], dest, &madeChecksum, cap);
+        readChecksum += (uint32_t)zlib[2 + defInfo.compressedBytesRead] << 24;
+        readChecksum += (uint32_t)zlib[3 + defInfo.compressedBytesRead] << 16;
+        readChecksum += (uint32_t)zlib[4 + defInfo.compressedBytesRead] << 8;
+        readChecksum += (uint32_t)zlib[5 + defInfo.compressedBytesRead];
     }
 
     // PD_DEBUG("DICTID: 0x%X", DICTID);
     PD_DEBUG("made checksum: 0x%X", madeChecksum);
     PD_DEBUG("read checksum: 0x%X", readChecksum);
-    PD_DEBUG("read a total of %lu compressed bytes.", compressedBytesRead);
+    PD_DEBUG("read a total of %lu compressed bytes.", defInfo.compressedBytesRead);
+    PD_DEBUG("wrote a total of %lu decompressed bytes.", defInfo.bytesWritten);
 
     if(madeChecksum != readChecksum)
     {
@@ -94,5 +90,5 @@ bool dsReadZlibPtr
                  madeChecksum, readChecksum);
     }
 
-    return true;
+    return defInfo.bytesWritten;
 }

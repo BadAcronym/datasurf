@@ -19,7 +19,8 @@ f_internal uint8_t *decodeHuffmanTrees
     uint8_t       *bitOffset,
     uint64_t      *iterator,
     uint32_t      *adlerA,
-    uint32_t      *adlerB
+    uint32_t      *adlerB,
+    uint64_t      cap
 ){
     for(uint16_t j = 0; j < readLength; ++j)
     {
@@ -157,6 +158,14 @@ f_internal uint8_t *decodeHuffmanTrees
         PD_ASSERT(distance - 1 < dst - og, "trying to go too far back: %u "
                   "(max %lu).", distance, (uint64_t)(dst - og));
 
+        PD_ASSERT(length - 1 < cap - (uint64_t)(dst - og), "output buffer overflow. "
+                  "length %u too long, max %lu.", length, cap - (uint64_t)(dst - og));
+
+        if((distance > dst - og) || (length > cap - (uint64_t)(dst - og)))
+        {
+            return 0;
+        }
+
         for(uint16_t l = 0; l < length; ++l)
         {
             *dst    = *(dst - distance);
@@ -168,14 +177,16 @@ f_internal uint8_t *decodeHuffmanTrees
     return dst;
 }
 
-f_internal uint8_t *readBlock_uncompressed
+f_internal uint8_t *readBlock_nohuff
 (
     const uint8_t *src,
     uint8_t       *dst,
+    uint8_t       *og,
     uint8_t       *bitOffset,
     uint64_t      *iterator,
     uint32_t      *adlerA,
-    uint32_t      *adlerB
+    uint32_t      *adlerB,
+    uint64_t      cap
 ){
     // skip to next byte
     *bitOffset = 0;
@@ -187,6 +198,14 @@ f_internal uint8_t *readBlock_uncompressed
     uint16_t COMP = LEN ^ 65535;
 
     PD_DEBUG("identified LEN: %u bytes", LEN);
+
+    PD_ASSERT(LEN - 1 < cap - (uint64_t)(dst - og), "output buffer overflow. trying to "
+              "read length %u, max %lu.", LEN, cap - (uint64_t)(dst - og));
+
+    if(LEN > cap - (uint64_t)(dst - og))
+    {
+        return 0;
+    }
 
     if(NLEN != COMP)
     {
@@ -214,7 +233,8 @@ f_internal uint8_t *readBlock_static
     uint8_t       *bitOffset,
     uint64_t      *iterator,
     uint32_t      *adlerA,
-    uint32_t      *adlerB
+    uint32_t      *adlerB,
+    uint64_t      cap
 ){
     uint16_t litLenLengths[288] = {0};
 
@@ -247,7 +267,7 @@ f_internal uint8_t *readBlock_static
     buildTree(&distanceTree, distLengths, 32);
 
     dst = decodeHuffmanTrees(&literalLengthTree, &distanceTree, 288 + 32,
-                             src, dst, og, bitOffset, iterator, adlerA, adlerB);
+                             src, dst, og, bitOffset, iterator, adlerA, adlerB, cap);
 
     destroyTree(&literalLengthTree);
     destroyTree(&distanceTree);
@@ -263,7 +283,8 @@ f_internal uint8_t *readBlock_dynamic
     uint8_t       *bitOffset,
     uint64_t      *iterator,
     uint32_t      *adlerA,
-    uint32_t      *adlerB
+    uint32_t      *adlerB,
+    uint64_t      cap
 ){
     DynHuffBlock dBlock = {0};
 
@@ -366,7 +387,7 @@ f_internal uint8_t *readBlock_dynamic
     // ...
 
     dst = decodeHuffmanTrees(&literalLengthTree, &distanceTree, totalLength,
-                             src, dst, og, bitOffset, iterator, adlerA, adlerB);
+                             src, dst, og, bitOffset, iterator, adlerA, adlerB, cap);
 
     destroyTree(&literalLengthTree);
     destroyTree(&distanceTree);
@@ -379,7 +400,8 @@ uint64_t dsReadDeflate
 (
     const uint8_t *src,
     uint8_t       *dst,
-    uint32_t      *checksum
+    uint32_t      *checksum,
+    uint64_t      cap
 ){
     uint8_t *og = dst;
 
@@ -406,15 +428,15 @@ uint64_t dsReadDeflate
 
         if(block.BTYPE == BTYPE_UNCROMPRESSED)
         {
-            dst = readBlock_uncompressed(src, dst, &bitOffset, &i, &adlerA, &adlerB);
+            dst = readBlock_nohuff(src, dst, og, &bitOffset, &i, &adlerA, &adlerB, cap);
         }
         else if(block.BTYPE == BTYPE_STATIC_HUFFMAN)
         {
-            dst = readBlock_static(src, dst, og, &bitOffset, &i, &adlerA, &adlerB);
+            dst = readBlock_static(src, dst, og, &bitOffset, &i, &adlerA, &adlerB, cap);
         }
         else if(block.BTYPE == BTYPE_DYNAMIC_HUFFMAN)
         {
-            dst = readBlock_dynamic(src, dst, og, &bitOffset, &i, &adlerA, &adlerB);
+            dst = readBlock_dynamic(src, dst, og, &bitOffset, &i, &adlerA, &adlerB, cap);
         }
         else // block.BTYPE == BTYPE_RESERVED
         {

@@ -27,7 +27,8 @@ ZLibUnion;
 bool dsReadZlibPtr
 (
     const uint8_t *zlib,
-    uint8_t       *dest
+    uint8_t       *dest,
+    uint64_t      cap
 ){
     ZLibUnion uInfo = { .data = {zlib[0], zlib[1], zlib[2]} };
     ZlibInfo  info  = uInfo.info;
@@ -53,15 +54,15 @@ bool dsReadZlibPtr
     PD_DEBUG("FDICT:  %u", info.FDICT);
     PD_DEBUG("FLEVEL: %u", info.FLEVEL);
 
-    uint32_t DICTID       = 0;
+    // uint32_t DICTID       = 0;
     uint32_t madeChecksum = 0;
     uint32_t readChecksum = 0;
     uint64_t compressedBytesRead = 0;
 
     if(info.FDICT)
     {
-        DICTID = *(uint32_t*)(&zlib[2]);
-        compressedBytesRead = dsReadDeflate(&zlib[6], dest, &madeChecksum);
+        // DICTID = *(uint32_t*)(&zlib[2]);
+        compressedBytesRead = dsReadDeflate(&zlib[6], dest, &madeChecksum, cap);
         readChecksum += (uint32_t)zlib[6 + compressedBytesRead] << 24;
         readChecksum += (uint32_t)zlib[7 + compressedBytesRead] << 16;
         readChecksum += (uint32_t)zlib[8 + compressedBytesRead] << 8;
@@ -69,7 +70,7 @@ bool dsReadZlibPtr
     }
     else
     {
-        compressedBytesRead = dsReadDeflate(&zlib[2], dest, &madeChecksum);
+        compressedBytesRead = dsReadDeflate(&zlib[2], dest, &madeChecksum, cap);
         readChecksum += (uint32_t)zlib[2 + compressedBytesRead] << 24;
         readChecksum += (uint32_t)zlib[3 + compressedBytesRead] << 16;
         readChecksum += (uint32_t)zlib[4 + compressedBytesRead] << 8;
@@ -82,7 +83,7 @@ bool dsReadZlibPtr
         return 0;
     }
 
-    PD_DEBUG("DICTID: 0x%X", DICTID);
+    // PD_DEBUG("DICTID: 0x%X", DICTID);
     PD_DEBUG("made checksum: 0x%X", madeChecksum);
     PD_DEBUG("read checksum: 0x%X", readChecksum);
     PD_DEBUG("read a total of %lu compressed bytes.", compressedBytesRead);

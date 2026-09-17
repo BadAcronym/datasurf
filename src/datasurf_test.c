@@ -7,6 +7,8 @@ f_internal bool verify
     uint8_t  *reconstructed,
     uint16_t length
 ){
+    PD_DEBUG("verifying %u bytes.", length);
+
     for(uint16_t i = 0; i < length; ++i)
     {
         if(dcode[i] != reconstructed[i])
@@ -40,7 +42,7 @@ int main
     };
     uint8_t testUncompressed[53] = {0};
 
-    if(!dsReadZlibPtr(uncompressed, testUncompressed))
+    if(!dsReadZlibPtr(uncompressed, testUncompressed, 53))
     {
         PD_FAIL("dsReadZlibPtr: could not read uncompressed string.");
         ++failed;
@@ -73,7 +75,6 @@ int main
         // ADLER-32 checksum of uncompressed data
         0xEF, 0x1F, 0x23, 0xC4
     };
-    uint8_t testFastCompressed[64]  = {0};
     uint8_t fastCompressedDcode[99] =
     {
         0x48, 0x65, 0x6C, 0x6C, 0x6F, 0x20, 0x68, 0x65, 0x6C, 0x6C, 0x6F, 0x2C, 0x20,
@@ -85,8 +86,9 @@ int main
         0x74, 0x68, 0x65, 0x20, 0x63, 0x6F, 0x6D, 0x70, 0x72, 0x65, 0x73, 0x73, 0x69,
         0x6F, 0x6E, 0x20, 0x77, 0x6F, 0x72, 0x6B, 0x2E,
     };
+    uint8_t testFastCompressed[99] = {0};
 
-    if(!dsReadZlibPtr(fastCompressed, testFastCompressed))
+    if(!dsReadZlibPtr(fastCompressed, testFastCompressed, 99))
     {
         PD_FAIL("dsReadZlibPtr: could not read string with fast compression.");
         ++failed;
@@ -144,7 +146,7 @@ int main
     }
     uint8_t testMaxCompressed[61 * 39]  = {0};
 
-    if(!dsReadZlibPtr(maxCompressed, testMaxCompressed))
+    if(!dsReadZlibPtr(maxCompressed, testMaxCompressed, 61 * 39))
     {
         PD_FAIL("dsReadZlibPtr: could not read string with max compression.");
         ++failed;

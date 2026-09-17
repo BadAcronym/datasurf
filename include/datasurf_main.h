@@ -9,10 +9,12 @@
 
 #define ADLER_PRIME 65521ULL
 
+// `cap` is the actual cap on your output buffer size.
 extern bool dsReadZlibPtr
 (
     const uint8_t *zlib,
-    uint8_t       *dest
+    uint8_t       *dest,
+    uint64_t      cap
 );
 
 // returns the COMPRESSED amount of bytes read,
@@ -21,7 +23,8 @@ extern uint64_t dsReadDeflate
 (
     const uint8_t *src,
     uint8_t       *dst,
-    uint32_t      *checksum
+    uint32_t      *checksum,
+    uint64_t      cap
 );
 
 #endif

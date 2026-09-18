@@ -488,6 +488,6 @@ result:
     {
         ++i;
     }
-    resultInfo.compressedBytesRead = i - 1;
+    resultInfo.compressedBytesRead = i;
     return resultInfo;
 }

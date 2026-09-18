@@ -40,7 +40,8 @@ f_internal uint8_t *decodeHuffmanTrees
         }
         else if(symbol == 256)
         {
-            PD_DEBUG("ending dynamic huffman block.");
+            PD_DEBUG("ending dynamic huffman block at byte %lu, bit offset %u.",
+                     *iterator, *bitOffset);
             return dst;
         }
 
@@ -197,6 +198,9 @@ f_internal uint8_t *readBlock_nohuff
     uint32_t      *adlerB,
     uint64_t      cap
 ){
+    PD_DEBUG("reading uncompressed block at byte %lu, bit offset %u.",
+             *iterator, *bitOffset);
+
     readBits(src, (8 - *bitOffset), bitOffset, iterator);
     uint16_t LEN  = readBits(src, 8, bitOffset, iterator);
     LEN += (readBits(src, 8, bitOffset, iterator) << 8);
@@ -244,6 +248,9 @@ f_internal uint8_t *readBlock_static
     uint32_t      *adlerB,
     uint64_t      cap
 ){
+    PD_DEBUG("reading static block at byte %lu, bit offset %u.",
+             *iterator, *bitOffset);
+
     uint16_t litLenLengths[288] = {0};
 
     for(uint16_t i = 0; i < 144; ++i)
@@ -296,6 +303,9 @@ f_internal uint8_t *readBlock_dynamic
     uint32_t      *adlerB,
     uint64_t      cap
 ){
+    PD_DEBUG("reading dynamic block at byte %lu, bit offset %u.",
+             *iterator, *bitOffset);
+
     DynHuffBlock dBlock = {0};
 
     dBlock.HLIT  = (uint8_t)readBits(src, 5, bitOffset, iterator);
@@ -305,8 +315,7 @@ f_internal uint8_t *readBlock_dynamic
     PD_DEBUG("HLIT:  %2u, actual: %3u", dBlock.HLIT,  dBlock.HLIT  + 257);
     PD_DEBUG("HDIST: %2u, actual: %3u", dBlock.HDIST, dBlock.HDIST + 1);
     PD_DEBUG("HCLEN: %2u, actual: %3u", dBlock.HCLEN, dBlock.HCLEN + 4);
-    PD_DEBUG("current byte position in deflate stream: %lu", *iterator);
-    PD_DEBUG("current bit position in byte: %u", *bitOffset);
+    PD_DEBUG("read header at byte %lu, bit offset %u.", *iterator, *bitOffset);
 
     uint16_t compressLengths[19] = {0};
 
@@ -315,8 +324,6 @@ f_internal uint8_t *readBlock_dynamic
     {
         uint8_t symbol = dynHuffCodelenghOrder[j];
         compressLengths[symbol] = (uint8_t)readBits(src, 3, bitOffset, iterator);
-        PD_DEBUG("read code-length symbol %u: length %u for encoded tree",
-                 symbol, compressLengths[symbol]);
     }
 
     uint16_t litLenTreeLength = dBlock.HLIT  + 257;
@@ -430,8 +437,9 @@ DeflateInfo dsReadDeflate
     DeflateBlock block      = {0};
 
     uint64_t i = 0;
-    for(; !endStream; ++i)
+    while(!endStream)
     {
+        PD_DEBUG("starting new block at byte %lu, bit offset %u.", i, bitOffset);
         block.BFINAL = (uint8_t)readBits(src, 1, &bitOffset, &i);
         if(block.BFINAL)
         {

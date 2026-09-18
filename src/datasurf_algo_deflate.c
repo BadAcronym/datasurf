@@ -3,9 +3,49 @@
 
 #include "pd_print_macros.h"
 
-const uint8_t dynHuffCodelenghOrder[19] =
+s_global const uint8_t dynHuffCodelenghOrder[19] =
 {
     16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
+};
+
+s_global const uint16_t lengthBases[28] =
+{
+      3,   4,   5,   6,
+      7,   8,   9,  10,
+     11,  13,  15,  17,
+     19,  23,  27,  31,
+     35,  43,  51,  59,
+     67,  83,  99, 115,
+    131, 163, 195, 227,
+};
+
+s_global const uint8_t lengthExtraBits[28] =
+{
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    1, 1, 1, 1,
+    2, 2, 2, 2,
+    3, 3, 3, 3,
+    4, 4, 4, 4,
+    5, 5, 5, 5,
+};
+
+s_global const uint16_t distanceBases[30] =
+{
+     1,    2,    3,    4,     5,     7,
+     9,    13,   17,   25,    33,    49,
+     65,   97,   129,  193,   257,   385,
+     513,  769,  1025, 1537,  2049,  3073,
+     4097, 6145, 8193, 12289, 16385, 24577
+};
+
+s_global const uint8_t distanceExtraBits[30] =
+{
+    0,  0,  0,  0,  1,  1,
+    2,  2,  3,  3,  4,  4,
+    5,  5,  6,  6,  7,  7,
+    8,  8,  9,  9,  10, 10,
+    11, 11, 12, 12, 13, 13
 };
 
 f_internal uint8_t *decodeHuffmanTrees
@@ -51,30 +91,18 @@ f_internal uint8_t *decodeHuffmanTrees
         {
             length = symbol - 254;
         }
-        else if(symbol < 269)
-        {
-            uint8_t extraBits = (uint8_t)readBits(src, 1, bitOffset, iterator);
-            length = 11 + extraBits + 2 * (symbol - 265);
-        }
-        else if(symbol < 273)
-        {
-            uint8_t extraBits = (uint8_t)readBits(src, 2, bitOffset, iterator);
-            length = 19 + extraBits + 4 * (symbol - 269);
-        }
-        else if(symbol < 277)
-        {
-            uint8_t extraBits = (uint8_t)readBits(src, 3, bitOffset, iterator);
-            length = 35 + extraBits + 8 * (symbol - 273);
-        }
-        else if(symbol < 281)
-        {
-            uint8_t extraBits = (uint8_t)readBits(src, 4, bitOffset, iterator);
-            length = 67 + extraBits + 16 * (symbol - 277);
-        }
         else if(symbol < 285)
         {
-            uint8_t extraBits = (uint8_t)readBits(src, 5, bitOffset, iterator);
-            length = 131 + extraBits + 32 * (symbol - 281);
+            uint16_t index     = symbol - 257;
+            uint8_t  bitCount  = lengthExtraBits[index];
+            uint32_t extraBits = 0;
+
+            if(bitCount)
+            {
+                extraBits = readBits(src, bitCount, bitOffset, iterator);
+            }
+
+            length = (uint16_t)(lengthBases[index] + extraBits);
         }
         else // symbol == 285
         {
@@ -92,70 +120,17 @@ f_internal uint8_t *decodeHuffmanTrees
         {
             distance = symbol + 1;
         }
-        else if(symbol < 6)
-        {
-            uint32_t extraBits = readBits(src, 1, bitOffset, iterator);
-            distance = 5 + extraBits + 2 * (symbol - 4);
-        }
-        else if(symbol < 8)
-        {
-            uint32_t extraBits = readBits(src, 2, bitOffset, iterator);
-            distance = 9 + extraBits + 4 * (symbol - 6);
-        }
-        else if(symbol < 10)
-        {
-            uint32_t extraBits = readBits(src, 3, bitOffset, iterator);
-            distance = 17 + extraBits + 8 * (symbol - 8);
-        }
-        else if(symbol < 12)
-        {
-            uint32_t extraBits = readBits(src, 4, bitOffset, iterator);
-            distance = 33 + extraBits + 16 * (symbol - 10);
-        }
-        else if(symbol < 14)
-        {
-            uint32_t extraBits = readBits(src, 5, bitOffset, iterator);
-            distance = 65 + extraBits + 32 * (symbol - 12);
-        }
-        else if(symbol < 16)
-        {
-            uint32_t extraBits = readBits(src, 6, bitOffset, iterator);
-            distance = 129 + extraBits + 64 * (symbol - 14);
-        }
-        else if(symbol < 18)
-        {
-            uint32_t extraBits = readBits(src, 7, bitOffset, iterator);
-            distance = 257 + extraBits + 128 * (symbol - 16);
-        }
-        else if(symbol < 20)
-        {
-            uint32_t extraBits = readBits(src, 8, bitOffset, iterator);
-            distance = 513 + extraBits + 256 * (symbol - 18);
-        }
-        else if(symbol < 22)
-        {
-            uint32_t extraBits = readBits(src, 9, bitOffset, iterator);
-            distance = 1025 + extraBits + 512 * (symbol - 20);
-        }
-        else if(symbol < 24)
-        {
-            uint32_t extraBits = readBits(src, 10, bitOffset, iterator);
-            distance = 2049 + extraBits + 1024 * (symbol - 22);
-        }
-        else if(symbol < 26)
-        {
-            uint32_t extraBits = readBits(src, 11, bitOffset, iterator);
-            distance = 4097 + extraBits + 2048 * (symbol - 24);
-        }
-        else if(symbol < 28)
-        {
-            uint32_t extraBits = readBits(src, 12, bitOffset, iterator);
-            distance = 8193 + extraBits + 4096 * (symbol - 26);
-        }
         else // symbol < 30
         {
-            uint32_t extraBits = readBits(src, 13, bitOffset, iterator);
-            distance  = 16385 + extraBits + 8192 * (symbol - 28);
+            uint8_t  bitCount  = distanceExtraBits[symbol];
+            uint32_t extraBits = 0;
+
+            if(bitCount)
+            {
+                extraBits = readBits(src, bitCount, bitOffset, iterator);
+            }
+
+            distance = distanceBases[symbol] + extraBits;
         }
 
         uint64_t produced = (uint64_t)(dst - og);

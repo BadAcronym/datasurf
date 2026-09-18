@@ -2,6 +2,7 @@
 #define DATASURF_H
 
 #define f_internal static
+#define s_global   static
 
 #include <stdint.h>
 #include <stdbool.h>

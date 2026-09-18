@@ -197,13 +197,12 @@ f_internal uint8_t *readBlock_nohuff
     uint32_t      *adlerB,
     uint64_t      cap
 ){
-    // skip to next byte
-    *bitOffset = 0;
-    *iterator += 1;
-    uint16_t LEN  = src[*iterator] + (uint16_t)(src[*iterator + 1] << 8);
-    *iterator += 2;
-    uint16_t NLEN = src[*iterator] + (uint16_t)(src[*iterator + 1] << 8);
-    *iterator += 2;
+    readBits(src, (8 - *bitOffset), bitOffset, iterator);
+    uint16_t LEN  = readBits(src, 8, bitOffset, iterator);
+    LEN += (readBits(src, 8, bitOffset, iterator) << 8);
+    uint16_t NLEN = readBits(src, 8, bitOffset, iterator);
+    NLEN += (readBits(src, 8, bitOffset, iterator) << 8);
+
     uint16_t COMP = LEN ^ 65535;
 
     PD_DEBUG("identified LEN: %u bytes", LEN);
@@ -272,7 +271,9 @@ f_internal uint8_t *readBlock_static
     HuffmanTree literalLengthTree = {0};
     HuffmanTree distanceTree      = {0};
 
+    PD_DEBUG("building literal-length tree.");
     buildTree(&literalLengthTree, litLenLengths, 288);
+    PD_DEBUG("building distance tree.");
     buildTree(&distanceTree, distLengths, 32);
 
     dst = decodeHuffmanTrees(&literalLengthTree, &distanceTree, src, dst, og,
@@ -304,6 +305,8 @@ f_internal uint8_t *readBlock_dynamic
     PD_DEBUG("HLIT:  %2u, actual: %3u", dBlock.HLIT,  dBlock.HLIT  + 257);
     PD_DEBUG("HDIST: %2u, actual: %3u", dBlock.HDIST, dBlock.HDIST + 1);
     PD_DEBUG("HCLEN: %2u, actual: %3u", dBlock.HCLEN, dBlock.HCLEN + 4);
+    PD_DEBUG("current byte position in deflate stream: %lu", *iterator);
+    PD_DEBUG("current bit position in byte: %u", *bitOffset);
 
     uint16_t compressLengths[19] = {0};
 
@@ -312,6 +315,8 @@ f_internal uint8_t *readBlock_dynamic
     {
         uint8_t symbol = dynHuffCodelenghOrder[j];
         compressLengths[symbol] = (uint8_t)readBits(src, 3, bitOffset, iterator);
+        PD_DEBUG("read code-length symbol %u: length %u for encoded tree",
+                 symbol, compressLengths[symbol]);
     }
 
     uint16_t litLenTreeLength = dBlock.HLIT  + 257;
@@ -324,6 +329,7 @@ f_internal uint8_t *readBlock_dynamic
     // using the lengths in compressLengths, before I can obtain the
     // codes for the other two trees.
     HuffmanTree encodedTree = {0};
+    PD_DEBUG("building encoded tree.");
     buildTree(&encodedTree, compressLengths, 19);
 
     for(uint16_t j = 0; j < totalLength; ++j)
@@ -338,8 +344,6 @@ f_internal uint8_t *readBlock_dynamic
             // literal length
             litDistLengths[j] = (uint8_t)symbol;
             previousLength    = (uint8_t)symbol;
-            PD_ASSERT(j < totalLength, "index into litDistLengths "
-                      "%u exceeds maximum of %u.", j, totalLength)
         }
         else if(symbol == 16)
         {
@@ -347,9 +351,9 @@ f_internal uint8_t *readBlock_dynamic
             uint8_t repeat = 3 + (uint8_t)readBits(src, 2, bitOffset, iterator);
             for(uint8_t k = 0; k < repeat; ++k)
             {
-                litDistLengths[j + k] = previousLength;
                 PD_ASSERT(j + k < totalLength, "index into litDistLengths "
                           "%u exceeds maximum of %u.", j, totalLength)
+                litDistLengths[j + k] = previousLength;
             }
             j += repeat - 1;
         }
@@ -359,9 +363,9 @@ f_internal uint8_t *readBlock_dynamic
             uint8_t repeat = 3 + (uint8_t)readBits(src, 3, bitOffset, iterator);
             for(uint8_t k = 0; k < repeat; ++k)
             {
-                litDistLengths[j + k] = 0;
                 PD_ASSERT(j + k < totalLength, "index into litDistLengths "
                           "%u exceeds maximum of %u.", j, totalLength)
+                litDistLengths[j + k] = 0;
             }
             j += repeat - 1;
             previousLength = 0;
@@ -372,9 +376,9 @@ f_internal uint8_t *readBlock_dynamic
             uint8_t repeat = 11 + (uint8_t)readBits(src, 7, bitOffset, iterator);
             for(uint8_t k = 0; k < repeat; ++k)
             {
-                litDistLengths[j + k] = 0;
                 PD_ASSERT(j + k < totalLength, "index into litDistLengths "
                           "%u exceeds maximum of %u.", j, totalLength)
+                litDistLengths[j + k] = 0;
             }
             j += repeat - 1;
             previousLength = 0;
@@ -383,7 +387,9 @@ f_internal uint8_t *readBlock_dynamic
 
     HuffmanTree literalLengthTree = {0};
     HuffmanTree distanceTree      = {0};
+    PD_DEBUG("building literal-length tree.");
     buildTree(&literalLengthTree, litDistLengths, litLenTreeLength);
+    PD_DEBUG("building distance tree.");
     buildTree(&distanceTree, &litDistLengths[litLenTreeLength],
               distTreeLength);
 

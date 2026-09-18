@@ -88,6 +88,13 @@ void makeCanonicalCodes
         nextCode[bits] = code;
     }
 
+    int32_t left = 1;
+    for(uint8_t i = 1; i < MAX_CODELEN + 1; ++i)
+    {
+        left = (left << 1u) - count[i];
+        PD_ASSERT(left > -1, "tree is oversubscribed.")
+    }
+
     for(uint16_t symbol = 0; symbol < symbolCount; ++symbol)
     {
         uint16_t length = lengths[symbol];
@@ -175,6 +182,8 @@ void buildTree
         }
         insertCode(tree, codes[i].code, codes[i].symbol, codes[i].length);
     }
+
+    PD_DEBUG("inserted %u codes into the tree.", symbolCount);
 
     free(codes);
 }

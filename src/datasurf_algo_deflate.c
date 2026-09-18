@@ -44,40 +44,26 @@ f_internal uint8_t *decodeHuffmanTrees
             return dst;
         }
 
+        int step = 0, a = 0, b = 0, c = 0;
+        uint32_t extraBits = 0;
+
         uint16_t length = 0;
 
-        if(symbol < 265)
-        {
-            length = symbol - 254;
+        if(symbol < 285){
+        	step = symbol < 265 ? 0 : ((symbol - 264 + 3) >> 2);
+
+			a = (4 << step) + 3;
+			b = (1 << step);
+			c = (step * 4) + 261;
+
+			//Behaviour observation:
+			//if the readBits function is left outside of this conditional
+			//it produces the correct outcome, but still throws errors
+			extraBits = readBits(src, step, bitOffset, iterator);
+			length = a + extraBits + b * (symbol - c);
         }
-        else if(symbol < 269)
-        {
-            uint8_t extraBits = (uint8_t)readBits(src, 1, bitOffset, iterator);
-            length = 11 + extraBits + 2 * (symbol - 265);
-        }
-        else if(symbol < 273)
-        {
-            uint8_t extraBits = (uint8_t)readBits(src, 2, bitOffset, iterator);
-            length = 19 + extraBits + 4 * (symbol - 269);
-        }
-        else if(symbol < 277)
-        {
-            uint8_t extraBits = (uint8_t)readBits(src, 3, bitOffset, iterator);
-            length = 35 + extraBits + 8 * (symbol - 273);
-        }
-        else if(symbol < 281)
-        {
-            uint8_t extraBits = (uint8_t)readBits(src, 4, bitOffset, iterator);
-            length = 67 + extraBits + 16 * (symbol - 277);
-        }
-        else if(symbol < 285)
-        {
-            uint8_t extraBits = (uint8_t)readBits(src, 5, bitOffset, iterator);
-            length = 131 + extraBits + 32 * (symbol - 281);
-        }
-        else // symbol == 285
-        {
-            length = 258;
+        else{
+        	length = 258;
         }
 
         symbol = decodeSymbol(distanceTree, src, bitOffset, iterator);
@@ -85,77 +71,14 @@ f_internal uint8_t *decodeHuffmanTrees
         PD_ASSERT(symbol < 30, "a symbol of 30 or higher cannot be "
                   "interpreted for the distance tree.");
 
-        uint32_t distance = 0;
+        step = symbol < 4 ? 0 : ((symbol - 2) >> 1);
 
-        if(symbol < 4)
-        {
-            distance = symbol + 1;
-        }
-        else if(symbol < 6)
-        {
-            uint32_t extraBits = readBits(src, 1, bitOffset, iterator);
-            distance = 5 + extraBits + 2 * (symbol - 4);
-        }
-        else if(symbol < 8)
-        {
-            uint32_t extraBits = readBits(src, 2, bitOffset, iterator);
-            distance = 9 + extraBits + 4 * (symbol - 6);
-        }
-        else if(symbol < 10)
-        {
-            uint32_t extraBits = readBits(src, 3, bitOffset, iterator);
-            distance = 17 + extraBits + 8 * (symbol - 8);
-        }
-        else if(symbol < 12)
-        {
-            uint32_t extraBits = readBits(src, 4, bitOffset, iterator);
-            distance = 33 + extraBits + 16 * (symbol - 10);
-        }
-        else if(symbol < 14)
-        {
-            uint32_t extraBits = readBits(src, 5, bitOffset, iterator);
-            distance = 65 + extraBits + 32 * (symbol - 12);
-        }
-        else if(symbol < 16)
-        {
-            uint32_t extraBits = readBits(src, 6, bitOffset, iterator);
-            distance = 129 + extraBits + 64 * (symbol - 14);
-        }
-        else if(symbol < 18)
-        {
-            uint32_t extraBits = readBits(src, 7, bitOffset, iterator);
-            distance = 257 + extraBits + 128 * (symbol - 16);
-        }
-        else if(symbol < 20)
-        {
-            uint32_t extraBits = readBits(src, 8, bitOffset, iterator);
-            distance = 513 + extraBits + 256 * (symbol - 18);
-        }
-        else if(symbol < 22)
-        {
-            uint32_t extraBits = readBits(src, 9, bitOffset, iterator);
-            distance = 1025 + extraBits + 512 * (symbol - 20);
-        }
-        else if(symbol < 24)
-        {
-            uint32_t extraBits = readBits(src, 10, bitOffset, iterator);
-            distance = 2049 + extraBits + 1024 * (symbol - 22);
-        }
-        else if(symbol < 26)
-        {
-            uint32_t extraBits = readBits(src, 11, bitOffset, iterator);
-            distance = 4097 + extraBits + 2048 * (symbol - 24);
-        }
-        else if(symbol < 28)
-        {
-            uint32_t extraBits = readBits(src, 12, bitOffset, iterator);
-            distance = 8193 + extraBits + 4096 * (symbol - 26);
-        }
-        else // symbol < 30
-        {
-            uint32_t extraBits = readBits(src, 13, bitOffset, iterator);
-            distance  = 16385 + extraBits + 8192 * (symbol - 28);
-        }
+        a = (2 << step) + 1;
+        b = (1 << step);
+        c = (step * 2) + 2;
+
+        extraBits = readBits(src, step, bitOffset, iterator);
+        uint32_t distance = a + extraBits + b * (symbol - c);
 
         uint64_t produced = (uint64_t)(dst - og);
 

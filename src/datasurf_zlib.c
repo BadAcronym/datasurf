@@ -43,7 +43,7 @@ uint64_t dsReadZlibPtr
     if((uInfo.og.CMF * 256 + uInfo.og.FLG) % 31 != 0)
     {
         PD_ERROR("Failed zlib header integrity check: CMF*256 + FLG "
-                "is not a multiple of 31, but instead: %u.",
+                "is not a multiple of 31, but %u.",
                 uInfo.og.CMF * 256 + uInfo.og.FLG);
         return false;
     }

@@ -448,12 +448,6 @@ DeflateInfo dsReadDeflate
             PD_ERROR("BTYPE of 3 is reserved.");
             goto result;
         }
-
-        if(!dst)
-        {
-            PD_ERROR("dst ptr was set to null. internal error.");
-            goto result;
-        }
     }
 
     *checksum = (adlerB << 16) | adlerA;

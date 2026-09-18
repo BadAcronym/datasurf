@@ -36,16 +36,20 @@ uint64_t dsReadZlibPtr
     if(info.CM != 8)
     {
         PD_ERROR("could not validate CMF in zlib data. "
-                "expected: 8, got: %u.", info.CM);
-        return false;
+                 "expected: 8, got: %u.", info.CM);
+        return 0;
     }
 
-    if((uInfo.og.CMF * 256 + uInfo.og.FLG) % 31 != 0)
+    PD_DEBUG("CMF: 0x%X", uInfo.og.CMF);
+    PD_DEBUG("FLG: 0x%X", uInfo.og.FLG);
+
+    uint16_t header = (uInfo.og.CMF << 8) | uInfo.og.FLG;
+    if(header % 31 != 0)
     {
         PD_ERROR("Failed zlib header integrity check: CMF*256 + FLG "
-                "is not a multiple of 31, but %u.",
-                uInfo.og.CMF * 256 + uInfo.og.FLG);
-        return false;
+                 "is not a multiple of 31, but %u.",
+                 header);
+        return 0;
     }
 
     PD_DEBUG("CM:     %u", info.CM);

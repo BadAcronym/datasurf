@@ -16,7 +16,7 @@ if($build -eq $null -or $build -eq "")
 
 $args_always=@("-DBUILD_WINDOWS",
 "src/datasurf_test.c",
-"src/datasurf_formats.c",
+"src/datasurf_zlib.c",
 "src/datasurf_huffman.c",
 "src/datasurf_algo_deflate.c",
 "vendor/puddle/src/win32_pd_path.c",

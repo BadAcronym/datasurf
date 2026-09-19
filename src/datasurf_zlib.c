@@ -43,7 +43,7 @@ uint64_t dsReadZlibPtr
     PD_DEBUG("CMF: 0x%X", uInfo.og.CMF);
     PD_DEBUG("FLG: 0x%X", uInfo.og.FLG);
 
-    uint16_t header = (uInfo.og.CMF << 8) | uInfo.og.FLG;
+    uint16_t header = (uint16_t)(uInfo.og.CMF << 8) | uInfo.og.FLG;
     if(header % 31 != 0)
     {
         PD_ERROR("Failed zlib header integrity check: CMF*256 + FLG "

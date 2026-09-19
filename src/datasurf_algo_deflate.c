@@ -140,10 +140,16 @@ f_internal uint8_t *decodeHuffmanTrees
             PD_ERROR("trying to go too far back: %u (max %lu).", distance, produced);
             return 0;
         }
-        else if(produced > cap || length > cap - produced)
+        else if(produced > cap)
         {
-            PD_ERROR("output buffer overflow. length %u too long, max %lu.",
-                     length, cap - produced);
+            PD_ERROR("output buffer overflow. wrote %lu, cap %lu.",
+                     produced, cap);
+            return 0;
+        }
+        else if(length + produced > cap)
+        {
+            PD_ERROR("output buffer overflow. length + produced %lu too long, max %lu.",
+                     length + produced, cap);
             return 0;
         }
 

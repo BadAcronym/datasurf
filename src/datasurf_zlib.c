@@ -30,6 +30,11 @@ uint64_t dsReadZlibPtr
     uint8_t       *dest,
     uint64_t      cap
 ){
+    if(cap < 3)
+    {
+        PD_ERROR("cannot read less than 3 bytes of zlib data. max passed: %lu.", cap);
+    }
+
     ZLibUnion uInfo = { .data = {zlib[0], zlib[1], zlib[2]} };
     ZlibInfo  info  = uInfo.info;
 

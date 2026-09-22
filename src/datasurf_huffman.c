@@ -1,8 +1,8 @@
 #include "datasurf_main.h"
 #include "datasurf_huffman.h"
 
+#include "pd_dyn_arr.h"
 #include "pd_print_macros.h"
-#include "dynamic_array.h"
 
 const uint8_t bitmasks[9] =
 {

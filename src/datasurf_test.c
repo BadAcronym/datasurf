@@ -42,7 +42,10 @@ int main
     };
     uint8_t testUncompressed[53] = {0};
 
-    if(!dsReadZlibPtr(uncompressed, testUncompressed, 53))
+    DeflateInfo dfInfo = {0};
+
+    dfInfo = dsReadZlibPtr(uncompressed, testUncompressed, 53);
+    if(!dfInfo.compressedBytesRead)
     {
         PD_FAIL("dsReadZlibPtr: could not read uncompressed string.");
         ++failed;
@@ -88,7 +91,8 @@ int main
     };
     uint8_t testFastCompressed[99] = {0};
 
-    if(!dsReadZlibPtr(fastCompressed, testFastCompressed, 99))
+    dfInfo = dsReadZlibPtr(fastCompressed, testFastCompressed, 99);
+    if(!dfInfo.compressedBytesRead)
     {
         PD_FAIL("dsReadZlibPtr: could not read string with fast compression.");
         ++failed;
@@ -146,7 +150,8 @@ int main
     }
     uint8_t testMaxCompressed[61 * 39]  = {0};
 
-    if(!dsReadZlibPtr(maxCompressed, testMaxCompressed, 61 * 39))
+    dfInfo = dsReadZlibPtr(maxCompressed, testMaxCompressed, 61 * 39);
+    if(!dfInfo.compressedBytesRead)
     {
         PD_FAIL("dsReadZlibPtr: could not read string with max compression.");
         ++failed;
@@ -179,7 +184,8 @@ int main
         PD_DEBUG("actual byte: #%u: 0x%X", i, bigUncompressed[i]);
     }
 
-    if(!dsReadZlibPtr(bigDcodeZlib, bigTest, totalSize))
+    dfInfo = dsReadZlibPtr(bigDcodeZlib, bigTest, totalSize);
+    if(!dfInfo.compressedBytesRead)
     {
         PD_FAIL("dsReadZlibPtr: could not read big data.");
         ++failed;

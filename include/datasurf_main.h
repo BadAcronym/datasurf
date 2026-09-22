@@ -18,17 +18,17 @@ typedef struct DeflateInfo
 DeflateInfo;
 
 // `cap` is the actual cap on your output buffer size.
-// returns the amount of DECOMPRESSED bytes that were written to buffer,
-// not the compressed amount of bytes read.
-extern uint64_t dsReadZlibPtr
+// returns both the compressed amount of bytes read,
+// as well as the decompressed amount of bytes produced.
+extern DeflateInfo dsReadZlibPtr
 (
     const uint8_t *zlib,
     uint8_t       *dest,
     uint64_t      cap
 );
 
-// returns the COMPRESSED amount of bytes read,
-// not the uncompressed amount of bytes produced.
+// returns both the compressed amount of bytes read,
+// as well as the decompressed amount of bytes produced.
 extern DeflateInfo dsReadDeflate
 (
     const uint8_t *src,

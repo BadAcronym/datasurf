@@ -24,7 +24,7 @@ typedef union ZLibUnion
 }
 ZLibUnion;
 
-uint64_t dsReadZlibPtr
+DeflateInfo dsReadZlibPtr
 (
     const uint8_t *zlib,
     uint8_t       *dest,
@@ -42,7 +42,7 @@ uint64_t dsReadZlibPtr
     {
         PD_ERROR("could not validate CMF in zlib data. "
                  "expected: 8, got: %u.", info.CM);
-        return 0;
+        return (DeflateInfo){0};
     }
 
     PD_DEBUG("CMF: 0x%X", uInfo.og.CMF);
@@ -54,7 +54,7 @@ uint64_t dsReadZlibPtr
         PD_ERROR("Failed zlib header integrity check: CMF*256 + FLG "
                  "is not a multiple of 31, but %u.",
                  header);
-        return 0;
+        return (DeflateInfo){0};
     }
 
     PD_DEBUG("CM:     %u", info.CM);
@@ -77,6 +77,7 @@ uint64_t dsReadZlibPtr
         readChecksum += (uint32_t)zlib[7 + defInfo.compressedBytesRead] << 16;
         readChecksum += (uint32_t)zlib[8 + defInfo.compressedBytesRead] << 8;
         readChecksum += (uint32_t)zlib[9 + defInfo.compressedBytesRead];
+        defInfo.compressedBytesRead += 10;
     }
     else
     {
@@ -85,6 +86,7 @@ uint64_t dsReadZlibPtr
         readChecksum += (uint32_t)zlib[3 + defInfo.compressedBytesRead] << 16;
         readChecksum += (uint32_t)zlib[4 + defInfo.compressedBytesRead] << 8;
         readChecksum += (uint32_t)zlib[5 + defInfo.compressedBytesRead];
+        defInfo.compressedBytesRead += 6;
     }
 
     // PD_DEBUG("DICTID: 0x%X", DICTID);
@@ -99,5 +101,5 @@ uint64_t dsReadZlibPtr
                  madeChecksum, readChecksum);
     }
 
-    return defInfo.bytesWritten;
+    return defInfo;
 }

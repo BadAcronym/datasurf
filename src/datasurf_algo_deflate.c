@@ -179,7 +179,7 @@ f_internal uint8_t *readBlock_nohuff
     uint32_t      *adlerB,
     uint64_t      cap
 ){
-    PD_DEBUG("reading uncompressed block at byte %lu, bit offset %u.",
+    PD_TRACE("reading uncompressed block at byte %lu, bit offset %u.",
              *iterator, *bitOffset);
 
     readBits(src, (8 - *bitOffset), bitOffset, iterator);
@@ -190,7 +190,7 @@ f_internal uint8_t *readBlock_nohuff
 
     uint16_t COMP = LEN ^ 65535;
 
-    PD_DEBUG("identified LEN: %u bytes", LEN);
+    PD_TRACE("identified LEN: %u bytes", LEN);
 
     PD_ASSERT(LEN - 1 < cap - (uint64_t)(dst - og), "output buffer overflow. trying to "
               "read length %u, max %lu.", LEN, cap - (uint64_t)(dst - og));
@@ -229,7 +229,7 @@ f_internal uint8_t *readBlock_static
     uint32_t      *adlerB,
     uint64_t      cap
 ){
-    PD_DEBUG("reading static block at byte %lu, bit offset %u.",
+    PD_TRACE("reading static block at byte %lu, bit offset %u.",
              *iterator, *bitOffset);
 
     uint16_t litLenLengths[288] = {0};

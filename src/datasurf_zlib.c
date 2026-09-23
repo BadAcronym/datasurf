@@ -30,11 +30,13 @@ DeflateInfo dsReadZlibPtr
     uint8_t       *dest,
     uint64_t      cap
 ){
+    DeflateInfo defInfo = {0};
+
     if(cap < 3)
     {
         PD_ERROR("cannot read less than 3 bytes of zlib data. max passed: %lu.", cap);
+        return (DeflateInfo){0};
     }
-
     ZLibUnion uInfo = { .data = {zlib[0], zlib[1], zlib[2]} };
     ZlibInfo  info  = uInfo.info;
 
@@ -67,8 +69,6 @@ DeflateInfo dsReadZlibPtr
     uint32_t madeChecksum = 0;
     uint32_t readChecksum = 0;
 
-    DeflateInfo defInfo = {0};
-
     if(info.FDICT)
     {
         // DICTID = *(uint32_t*)(&zlib[2]);
@@ -99,6 +99,7 @@ DeflateInfo dsReadZlibPtr
     {
         PD_WARN("made checksum (0x%X) does not match the read checksum (0x%X).",
                  madeChecksum, readChecksum);
+        defInfo.success = false;
     }
 
     return defInfo;

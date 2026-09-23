@@ -14,6 +14,7 @@ typedef struct DeflateInfo
 {
     uint64_t compressedBytesRead;
     uint64_t bytesWritten;
+    bool     success;
 }
 DeflateInfo;
 

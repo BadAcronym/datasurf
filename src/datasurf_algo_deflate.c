@@ -188,7 +188,7 @@ f_internal uint8_t *readBlock_nohuff
     uint16_t NLEN = readBits(src, 8, bitOffset, iterator);
     NLEN += (readBits(src, 8, bitOffset, iterator) << 8);
 
-    uint16_t COMP = LEN ^ 65535;
+    uint16_t COMP = LEN ^ 0xFFFF;
 
     PD_TRACE("identified LEN: %u bytes", LEN);
 
@@ -430,18 +430,33 @@ DeflateInfo dsReadDeflate
         {
             uint8_t *start = dst;
             dst = readBlock_nohuff(src, dst, og, &bitOffset, &i, &adlerA, &adlerB, cap);
+            if(!dst)
+            {
+                goto result;
+            }
+
             resultInfo.bytesWritten += (uint64_t)(dst - start);
         }
         else if(block.BTYPE == BTYPE_STATIC_HUFFMAN)
         {
             uint8_t *start = dst;
             dst = readBlock_static(src, dst, og, &bitOffset, &i, &adlerA, &adlerB, cap);
+            if(!dst)
+            {
+                goto result;
+            }
+
             resultInfo.bytesWritten += (uint64_t)(dst - start);
         }
         else if(block.BTYPE == BTYPE_DYNAMIC_HUFFMAN)
         {
             uint8_t *start = dst;
             dst = readBlock_dynamic(src, dst, og, &bitOffset, &i, &adlerA, &adlerB, cap);
+            if(!dst)
+            {
+                goto result;
+            }
+
             resultInfo.bytesWritten += (uint64_t)(dst - start);
         }
         else // block.BTYPE == BTYPE_RESERVED
@@ -452,6 +467,8 @@ DeflateInfo dsReadDeflate
     }
 
     *checksum = (adlerB << 16) | adlerA;
+
+    resultInfo.success = true;
 
 result:
     if(bitOffset)

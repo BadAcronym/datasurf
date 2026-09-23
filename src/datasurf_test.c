@@ -174,16 +174,6 @@ int main
     uint64_t totalSize = sizeof(bigUncompressed);
     uint8_t  bigTest[totalSize];
 
-    for(uint16_t i = 390; i < 410; ++i)
-    {
-        PD_DEBUG("actual byte: #%u: 0x%X", i, bigUncompressed[i]);
-    }
-
-    for(uint16_t i = 1550; i < 1575; ++i)
-    {
-        PD_DEBUG("actual byte: #%u: 0x%X", i, bigUncompressed[i]);
-    }
-
     dfInfo = dsReadZlibPtr(bigDcodeZlib, bigTest, totalSize);
     if(!dfInfo.compressedBytesRead)
     {

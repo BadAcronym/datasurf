@@ -61,7 +61,7 @@ f_internal uint8_t *decodeHuffmanTrees
     uint32_t      *adlerB,
     uint64_t      cap
 ){
-    PD_DEBUG("decoding max. %lu symbols from huffman tree.", cap);
+    PD_TRACE("decoding max. %lu symbols from huffman tree.", cap);
 
     for(uint64_t j = 0; j < cap; ++j)
     {
@@ -80,7 +80,7 @@ f_internal uint8_t *decodeHuffmanTrees
         }
         else if(symbol == 256)
         {
-            PD_DEBUG("ending dynamic huffman block at byte %lu, bit offset %u.",
+            PD_TRACE("ending dynamic huffman block at byte %lu, bit offset %u.",
                      *iterator, *bitOffset);
             return dst;
         }
@@ -259,9 +259,7 @@ f_internal uint8_t *readBlock_static
     HuffmanTree literalLengthTree = {0};
     HuffmanTree distanceTree      = {0};
 
-    PD_DEBUG("building literal-length tree.");
     buildTree(&literalLengthTree, litLenLengths, 288);
-    PD_DEBUG("building distance tree.");
     buildTree(&distanceTree, distLengths, 32);
 
     dst = decodeHuffmanTrees(&literalLengthTree, &distanceTree, src, dst, og,
@@ -284,7 +282,7 @@ f_internal uint8_t *readBlock_dynamic
     uint32_t      *adlerB,
     uint64_t      cap
 ){
-    PD_DEBUG("reading dynamic block at byte %lu, bit offset %u.",
+    PD_TRACE("reading dynamic block at byte %lu, bit offset %u.",
              *iterator, *bitOffset);
 
     DynHuffBlock dBlock = {0};
@@ -293,10 +291,10 @@ f_internal uint8_t *readBlock_dynamic
     dBlock.HDIST = (uint8_t)readBits(src, 5, bitOffset, iterator);
     dBlock.HCLEN = (uint8_t)readBits(src, 4, bitOffset, iterator);
 
-    PD_DEBUG("HLIT:  %2u, actual: %3u", dBlock.HLIT,  dBlock.HLIT  + 257);
-    PD_DEBUG("HDIST: %2u, actual: %3u", dBlock.HDIST, dBlock.HDIST + 1);
-    PD_DEBUG("HCLEN: %2u, actual: %3u", dBlock.HCLEN, dBlock.HCLEN + 4);
-    PD_DEBUG("read header at byte %lu, bit offset %u.", *iterator, *bitOffset);
+    PD_TRACE("HLIT:  %2u, actual: %3u", dBlock.HLIT,  dBlock.HLIT  + 257);
+    PD_TRACE("HDIST: %2u, actual: %3u", dBlock.HDIST, dBlock.HDIST + 1);
+    PD_TRACE("HCLEN: %2u, actual: %3u", dBlock.HCLEN, dBlock.HCLEN + 4);
+    PD_TRACE("read header at byte %lu, bit offset %u.", *iterator, *bitOffset);
 
     uint16_t compressLengths[19] = {0};
 
@@ -317,7 +315,6 @@ f_internal uint8_t *readBlock_dynamic
     // using the lengths in compressLengths, before I can obtain the
     // codes for the other two trees.
     HuffmanTree encodedTree = {0};
-    PD_DEBUG("building encoded tree.");
     buildTree(&encodedTree, compressLengths, 19);
 
     for(uint16_t j = 0; j < totalLength; ++j)
@@ -375,9 +372,7 @@ f_internal uint8_t *readBlock_dynamic
 
     HuffmanTree literalLengthTree = {0};
     HuffmanTree distanceTree      = {0};
-    PD_DEBUG("building literal-length tree.");
     buildTree(&literalLengthTree, litDistLengths, litLenTreeLength);
-    PD_DEBUG("building distance tree.");
     buildTree(&distanceTree, &litDistLengths[litLenTreeLength],
               distTreeLength);
 
@@ -420,16 +415,16 @@ DeflateInfo dsReadDeflate
     uint64_t i = 0;
     while(!endStream)
     {
-        PD_DEBUG("starting new block at byte %lu, bit offset %u.", i, bitOffset);
+        PD_TRACE("starting new block at byte %lu, bit offset %u.", i, bitOffset);
         block.BFINAL = (uint8_t)readBits(src, 1, &bitOffset, &i);
         if(block.BFINAL)
         {
-            PD_DEBUG("BFINAL found.");
+            PD_TRACE("BFINAL found.");
             endStream = true;
         }
 
         block.BTYPE = (uint8_t)readBits(src, 2, &bitOffset, &i);
-        PD_DEBUG("BTYPE: %u", block.BTYPE);
+        PD_TRACE("BTYPE: %u", block.BTYPE);
 
         if(block.BTYPE == BTYPE_UNCROMPRESSED)
         {

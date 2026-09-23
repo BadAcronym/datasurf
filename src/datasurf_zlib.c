@@ -45,8 +45,8 @@ DeflateInfo dsReadZlibPtr
         return (DeflateInfo){0};
     }
 
-    PD_DEBUG("CMF: 0x%X", uInfo.og.CMF);
-    PD_DEBUG("FLG: 0x%X", uInfo.og.FLG);
+    PD_TRACE("CMF: 0x%X", uInfo.og.CMF);
+    PD_TRACE("FLG: 0x%X", uInfo.og.FLG);
 
     uint16_t header = (uint16_t)(uInfo.og.CMF << 8) | uInfo.og.FLG;
     if(header % 31 != 0)
@@ -57,11 +57,11 @@ DeflateInfo dsReadZlibPtr
         return (DeflateInfo){0};
     }
 
-    PD_DEBUG("CM:     %u", info.CM);
-    PD_DEBUG("CINFO:  %u", info.CINFO);
-    PD_DEBUG("FCHECK: %u", info.FCHECK);
-    PD_DEBUG("FDICT:  %u", info.FDICT);
-    PD_DEBUG("FLEVEL: %u", info.FLEVEL);
+    PD_TRACE("CM:     %u", info.CM);
+    PD_TRACE("CINFO:  %u", info.CINFO);
+    PD_TRACE("FCHECK: %u", info.FCHECK);
+    PD_TRACE("FDICT:  %u", info.FDICT);
+    PD_TRACE("FLEVEL: %u", info.FLEVEL);
 
     // uint32_t DICTID       = 0;
     uint32_t madeChecksum = 0;

@@ -183,7 +183,7 @@ void buildTree
         insertCode(tree, codes[i].code, codes[i].symbol, codes[i].length);
     }
 
-    PD_DEBUG("inserted %u codes into the tree.", symbolCount);
+    PD_TRACE("inserted %u codes into the tree.", symbolCount);
 
     free(codes);
 }

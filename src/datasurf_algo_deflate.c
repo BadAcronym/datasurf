@@ -72,7 +72,7 @@ f_internal uint8_t *decodeHuffmanTrees
 
         if(symbol < 256)
         {
-            PD_TRACE("wrote literal: 0x%X", symbol);
+            // PD_TRACE("wrote literal: 0x%X", symbol);
             *dst    = (uint8_t)symbol;
             *adlerA = (*adlerA + *dst++)  % ADLER_PRIME;
             *adlerB = (*adlerB + *adlerA) % ADLER_PRIME;
@@ -153,12 +153,12 @@ f_internal uint8_t *decodeHuffmanTrees
             return 0;
         }
 
-        PD_TRACE("LZ77: (length: %u, distance: %u)", length, distance);
+        // PD_TRACE("LZ77: (length: %u, distance: %u)", length, distance);
 
         for(uint16_t l = 0; l < length; ++l)
         {
-            PD_TRACE("wrote LZ77: 0x%X <- byte #%lu, source byte #%lu",
-                     *(dst - distance), (dst - og), (dst - og - distance));
+            // PD_TRACE("wrote LZ77: 0x%X <- byte #%lu, source byte #%lu",
+                     // *(dst - distance), (dst - og), (dst - og - distance));
             *dst    = *(dst - distance);
             *adlerA = (*adlerA + *dst++)  % ADLER_PRIME;
             *adlerB = (*adlerB + *adlerA) % ADLER_PRIME;

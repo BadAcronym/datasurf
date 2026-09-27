@@ -7,13 +7,13 @@ f_internal bool verify
     uint8_t  *reconstructed,
     uint64_t length
 ){
-    PD_DEBUG("verifying %lu bytes.", length);
+    PD_DEBUG("verifying %"PRIu64" bytes.", length);
 
     for(uint16_t i = 0; i < length; ++i)
     {
         if(dcode[i] != reconstructed[i])
         {
-            PD_ERROR("verifying failed @ byte %u: expected: 0x%X, got: 0x%X.",
+            PD_ERROR("verifying failed @ byte %"PRIu32": expected: 0x%X, got: 0x%X.",
                      i, dcode[i], reconstructed[i]);
             return false;
         }
@@ -45,7 +45,7 @@ int main
     DeflateInfo dfInfo = {0};
 
     dfInfo = dsReadZlibPtr(uncompressed, testUncompressed, 53);
-    if(!dfInfo.compressedBytesRead)
+    if(!dfInfo.bytesRead)
     {
         PD_FAIL("dsReadZlibPtr: could not read uncompressed string.");
         ++failed;
@@ -92,7 +92,7 @@ int main
     uint8_t testFastCompressed[99] = {0};
 
     dfInfo = dsReadZlibPtr(fastCompressed, testFastCompressed, 99);
-    if(!dfInfo.compressedBytesRead)
+    if(!dfInfo.bytesRead)
     {
         PD_FAIL("dsReadZlibPtr: could not read string with fast compression.");
         ++failed;
@@ -151,7 +151,7 @@ int main
     uint8_t testMaxCompressed[61 * 39]  = {0};
 
     dfInfo = dsReadZlibPtr(maxCompressed, testMaxCompressed, 61 * 39);
-    if(!dfInfo.compressedBytesRead)
+    if(!dfInfo.bytesRead)
     {
         PD_FAIL("dsReadZlibPtr: could not read string with max compression.");
         ++failed;
@@ -175,7 +175,7 @@ int main
     uint8_t  bigTest[totalSize];
 
     dfInfo = dsReadZlibPtr(bigDcodeZlib, bigTest, totalSize);
-    if(!dfInfo.compressedBytesRead)
+    if(!dfInfo.bytesRead)
     {
         PD_FAIL("dsReadZlibPtr: could not read big data.");
         ++failed;

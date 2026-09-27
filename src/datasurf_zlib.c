@@ -34,7 +34,8 @@ DeflateInfo dsReadZlibPtr
 
     if(cap < 3)
     {
-        PD_ERROR("cannot read less than 3 bytes of zlib data. max passed: %lu.", cap);
+        PD_ERROR("cannot read less than 3 bytes of zlib data. max passed: %"PRIu64".",
+                 cap);
         return (DeflateInfo){0};
     }
     ZLibUnion uInfo = { .data = {zlib[0], zlib[1], zlib[2]} };
@@ -42,8 +43,8 @@ DeflateInfo dsReadZlibPtr
 
     if(info.CM != 8)
     {
-        PD_ERROR("could not validate CMF in zlib data. "
-                 "expected: 8, got: %u.", info.CM);
+        PD_ERROR("could not validate CMF in zlib data. expected: 8, got: %"
+                 PRIu32".", info.CM);
         return (DeflateInfo){0};
     }
 
@@ -53,17 +54,16 @@ DeflateInfo dsReadZlibPtr
     uint16_t header = (uint16_t)(uInfo.og.CMF << 8) | uInfo.og.FLG;
     if(header % 31 != 0)
     {
-        PD_ERROR("Failed zlib header integrity check: CMF*256 + FLG "
-                 "is not a multiple of 31, but %u.",
-                 header);
+        PD_ERROR("Failed zlib header integrity check: CMF*256 + FLG is not a multiple "
+                 "of 31, but %"PRIu32".", header);
         return (DeflateInfo){0};
     }
 
-    PD_TRACE("CM:     %u", info.CM);
-    PD_TRACE("CINFO:  %u", info.CINFO);
-    PD_TRACE("FCHECK: %u", info.FCHECK);
-    PD_TRACE("FDICT:  %u", info.FDICT);
-    PD_TRACE("FLEVEL: %u", info.FLEVEL);
+    PD_TRACE("CM:     %"PRIu8, info.CM);
+    PD_TRACE("CINFO:  %"PRIu8, info.CINFO);
+    PD_TRACE("FCHECK: %"PRIu8, info.FCHECK);
+    PD_TRACE("FDICT:  %"PRIu8, info.FDICT);
+    PD_TRACE("FLEVEL: %"PRIu8, info.FLEVEL);
 
     // uint32_t DICTID       = 0;
     uint32_t madeChecksum = 0;
@@ -73,27 +73,27 @@ DeflateInfo dsReadZlibPtr
     {
         // DICTID = *(uint32_t*)(&zlib[2]);
         defInfo = dsReadDeflate(&zlib[6], dest, &madeChecksum, cap);
-        readChecksum += (uint32_t)zlib[6 + defInfo.compressedBytesRead] << 24;
-        readChecksum += (uint32_t)zlib[7 + defInfo.compressedBytesRead] << 16;
-        readChecksum += (uint32_t)zlib[8 + defInfo.compressedBytesRead] << 8;
-        readChecksum += (uint32_t)zlib[9 + defInfo.compressedBytesRead];
-        defInfo.compressedBytesRead += 10;
+        readChecksum += (uint32_t)zlib[6 + defInfo.bytesRead] << 24;
+        readChecksum += (uint32_t)zlib[7 + defInfo.bytesRead] << 16;
+        readChecksum += (uint32_t)zlib[8 + defInfo.bytesRead] << 8;
+        readChecksum += (uint32_t)zlib[9 + defInfo.bytesRead];
+        defInfo.bytesRead += 10;
     }
     else
     {
         defInfo = dsReadDeflate(&zlib[2], dest, &madeChecksum, cap);
-        readChecksum += (uint32_t)zlib[2 + defInfo.compressedBytesRead] << 24;
-        readChecksum += (uint32_t)zlib[3 + defInfo.compressedBytesRead] << 16;
-        readChecksum += (uint32_t)zlib[4 + defInfo.compressedBytesRead] << 8;
-        readChecksum += (uint32_t)zlib[5 + defInfo.compressedBytesRead];
-        defInfo.compressedBytesRead += 6;
+        readChecksum += (uint32_t)zlib[2 + defInfo.bytesRead] << 24;
+        readChecksum += (uint32_t)zlib[3 + defInfo.bytesRead] << 16;
+        readChecksum += (uint32_t)zlib[4 + defInfo.bytesRead] << 8;
+        readChecksum += (uint32_t)zlib[5 + defInfo.bytesRead];
+        defInfo.bytesRead += 6;
     }
 
     // PD_DEBUG("DICTID: 0x%X", DICTID);
     PD_DEBUG("made checksum: 0x%X", madeChecksum);
     PD_DEBUG("read checksum: 0x%X", readChecksum);
-    PD_DEBUG("read a total of %lu compressed bytes.", defInfo.compressedBytesRead);
-    PD_DEBUG("wrote a total of %lu decompressed bytes.", defInfo.bytesWritten);
+    PD_DEBUG("read a total of %"PRIu64" compressed bytes.", defInfo.bytesRead);
+    PD_DEBUG("wrote a total of %"PRIu64" decompressed bytes.", defInfo.bytesWritten);
 
     if(madeChecksum != readChecksum)
     {

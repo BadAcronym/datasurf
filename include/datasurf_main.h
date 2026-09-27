@@ -5,6 +5,7 @@
 #define s_global   static
 
 #include <stdint.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -12,7 +13,7 @@
 
 typedef struct DeflateInfo
 {
-    uint64_t compressedBytesRead;
+    uint64_t bytesRead;
     uint64_t bytesWritten;
     bool     success;
 }

@@ -58,7 +58,7 @@ uint16_t reverseBits
         code >>= 1;
     }
 
-    PD_ASSERT(result < (1u << length), "result (length %u) %u >= %u (maximum)",
+    PD_ASSERT(result < (1u << length), "result (length %"PRIu32") %"PRIu32" >= %"PRIu32" (maximum)",
               length, result, 1u << length);
 
     return result;
@@ -108,7 +108,8 @@ void makeCanonicalCodes
             uint16_t canonical = nextCode[length]++;
 
             PD_ASSERT(canonical < (1u << length), "canonical code overflow: "
-                      "symbol: %u length: %u code: %u", symbol, length, canonical);
+                      "symbol: %"PRIu32" length: %"PRIu32" code: %"PRIu32"", symbol,
+                      length, canonical);
 
             codes[symbol].code = reverseBits(canonical, length);
         }
@@ -141,7 +142,7 @@ void insertCode
             tree->nodes[node].children[bit] = child;
 
             PD_ASSERT(child >= 0 && child < (int16_t)pdArrSize(tree->nodes),
-                      "invalid Huffman child index: %d, node count: %zu",
+                      "invalid Huffman child index: %"PRIi16", node count: %"PRIu64,
                       child, pdArrSize(tree->nodes));
         }
 
@@ -149,7 +150,7 @@ void insertCode
     }
 
     PD_ASSERT(tree->nodes[node].symbol == -1, "huffman tree is constructed incorrectly."
-              "\nSymbol %u at node %u cannot be overwritten.",
+              "\nSymbol %"PRIu32" at node %"PRIu32" cannot be overwritten.",
               tree->nodes[node].symbol, node);
 
     tree->nodes[node].symbol = (int16_t)symbol;
@@ -183,7 +184,7 @@ void buildTree
         insertCode(tree, codes[i].code, codes[i].symbol, codes[i].length);
     }
 
-    PD_TRACE("inserted %u codes into the tree.", symbolCount);
+    PD_TRACE("inserted %"PRIu32" codes into the tree.", symbolCount);
 
     free(codes);
 }
@@ -228,7 +229,7 @@ uint16_t decodeSymbol
         }
     }
 
-    PD_ERROR("could not find huffman code (%u) in the tree that was given within %u "
-             "bits.", node, MAX_CODELEN);
+    PD_ERROR("could not find huffman code (%"PRIu32") in the tree that was given "
+             "within %"PRIu32" bits.", node, MAX_CODELEN);
     return UINT16_MAX;
 }

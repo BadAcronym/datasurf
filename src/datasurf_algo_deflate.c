@@ -61,7 +61,7 @@ f_internal uint8_t *decodeHuffmanTrees
     uint32_t      *adlerB,
     uint64_t      cap
 ){
-    PD_TRACE("decoding max. %lu symbols from huffman tree.", cap);
+    PD_TRACE("decoding max. %"PRIu64" symbols from huffman tree.", cap);
 
     for(uint64_t j = 0; j < cap; ++j)
     {
@@ -80,8 +80,8 @@ f_internal uint8_t *decodeHuffmanTrees
         }
         else if(symbol == 256)
         {
-            PD_TRACE("ending dynamic huffman block at byte %lu, bit offset %u.",
-                     *iterator, *bitOffset);
+            PD_TRACE("ending dynamic huffman block at byte %"PRIu64", bit offset %"
+                     PRIu8".", *iterator, *bitOffset);
             return dst;
         }
 
@@ -137,27 +137,28 @@ f_internal uint8_t *decodeHuffmanTrees
 
         if(distance > produced)
         {
-            PD_ERROR("trying to go too far back: %u (max %lu).", distance, produced);
+            PD_ERROR("trying to go too far back: %"PRIu32" (max %"PRIu64").", distance,
+                     produced);
             return 0;
         }
         else if(produced > cap)
         {
-            PD_ERROR("output buffer overflow. wrote %lu, cap %lu.",
+            PD_ERROR("output buffer overflow. wrote %"PRIu64", cap %"PRIu64".",
                      produced, cap);
             return 0;
         }
         else if(length + produced > cap)
         {
-            PD_ERROR("output buffer overflow. length + produced %lu too long, max %lu.",
-                     length + produced, cap);
+            PD_ERROR("output buffer overflow. length + produced %"PRIu64" too long, "
+                     "max %"PRIu64".", length + produced, cap);
             return 0;
         }
 
-        // PD_TRACE("LZ77: (length: %u, distance: %u)", length, distance);
+        // PD_TRACE("LZ77: (length: %"PRIu32", distance: %"PRIu32")", length, distance);
 
         for(uint16_t l = 0; l < length; ++l)
         {
-            // PD_TRACE("wrote LZ77: 0x%X <- byte #%lu, source byte #%lu",
+            // PD_TRACE("wrote LZ77: 0x%X <- byte #%"PRIu64", source byte #%"PRIu64"",
                      // *(dst - distance), (dst - og), (dst - og - distance));
             *dst    = *(dst - distance);
             *adlerA = (*adlerA + *dst++)  % ADLER_PRIME;
@@ -179,7 +180,7 @@ f_internal uint8_t *readBlock_nohuff
     uint32_t      *adlerB,
     uint64_t      cap
 ){
-    PD_TRACE("reading uncompressed block at byte %lu, bit offset %u.",
+    PD_TRACE("reading uncompressed block at byte %"PRIu64", bit offset %"PRIu8".",
              *iterator, *bitOffset);
 
     readBits(src, (8 - *bitOffset), bitOffset, iterator);
@@ -190,10 +191,10 @@ f_internal uint8_t *readBlock_nohuff
 
     uint16_t COMP = LEN ^ 0xFFFF;
 
-    PD_TRACE("identified LEN: %u bytes", LEN);
+    PD_TRACE("identified LEN: %"PRIu32" bytes", LEN);
 
     PD_ASSERT(LEN - 1 < cap - (uint64_t)(dst - og), "output buffer overflow. trying to "
-              "read length %u, max %lu.", LEN, cap - (uint64_t)(dst - og));
+              "read length %"PRIu32", max %"PRIu64".", LEN, cap - (uint64_t)(dst - og));
 
     if(LEN > cap - (uint64_t)(dst - og))
     {
@@ -202,8 +203,8 @@ f_internal uint8_t *readBlock_nohuff
 
     if(NLEN != COMP)
     {
-        PD_ERROR("NLEN does not match 1's complement of LEN: "
-                 "LEN: %u, NLEN: %u, COMP: %u", LEN, NLEN, COMP);
+        PD_ERROR("NLEN does not match 1's complement of LEN: LEN: %"PRIu32", "
+                 "NLEN: %"PRIu32", COMP: %"PRIu32"", LEN, NLEN, COMP);
         return 0;
     }
 
@@ -229,7 +230,7 @@ f_internal uint8_t *readBlock_static
     uint32_t      *adlerB,
     uint64_t      cap
 ){
-    PD_TRACE("reading static block at byte %lu, bit offset %u.",
+    PD_TRACE("reading static block at byte %"PRIu64", bit offset %"PRIu8".",
              *iterator, *bitOffset);
 
     uint16_t litLenLengths[288] = {0};
@@ -282,7 +283,7 @@ f_internal uint8_t *readBlock_dynamic
     uint32_t      *adlerB,
     uint64_t      cap
 ){
-    PD_TRACE("reading dynamic block at byte %lu, bit offset %u.",
+    PD_TRACE("reading dynamic block at byte %"PRIu64", bit offset %"PRIu8".",
              *iterator, *bitOffset);
 
     DynHuffBlock dBlock = {0};
@@ -291,10 +292,11 @@ f_internal uint8_t *readBlock_dynamic
     dBlock.HDIST = (uint8_t)readBits(src, 5, bitOffset, iterator);
     dBlock.HCLEN = (uint8_t)readBits(src, 4, bitOffset, iterator);
 
-    PD_TRACE("HLIT:  %2u, actual: %3u", dBlock.HLIT,  dBlock.HLIT  + 257);
-    PD_TRACE("HDIST: %2u, actual: %3u", dBlock.HDIST, dBlock.HDIST + 1);
-    PD_TRACE("HCLEN: %2u, actual: %3u", dBlock.HCLEN, dBlock.HCLEN + 4);
-    PD_TRACE("read header at byte %lu, bit offset %u.", *iterator, *bitOffset);
+    PD_TRACE("HLIT:  %2"PRIu16", actual: %3"PRIu16, dBlock.HLIT,  dBlock.HLIT  + 257);
+    PD_TRACE("HDIST: %2"PRIu16", actual: %3"PRIu16, dBlock.HDIST, dBlock.HDIST + 1);
+    PD_TRACE("HCLEN: %2"PRIu16", actual: %3"PRIu16, dBlock.HCLEN, dBlock.HCLEN + 4);
+    PD_TRACE("read header at byte %"PRIu64", bit offset %"PRIu8".",
+             *iterator, *bitOffset);
 
     uint16_t compressLengths[19] = {0};
 
@@ -321,7 +323,7 @@ f_internal uint8_t *readBlock_dynamic
     {
         uint16_t symbol = decodeSymbol(&encodedTree, src, bitOffset, iterator);
 
-        PD_ASSERT(symbol < 19, "A symbol above 18 (%u) from the compressed tree"
+        PD_ASSERT(symbol < 19, "A symbol above 18 (%"PRIu32") from the compressed tree"
                   " cannot be interpreted.", symbol);
 
         if(symbol < 16)
@@ -336,8 +338,8 @@ f_internal uint8_t *readBlock_dynamic
             uint8_t repeat = 3 + (uint8_t)readBits(src, 2, bitOffset, iterator);
             for(uint8_t k = 0; k < repeat; ++k)
             {
-                PD_ASSERT(j + k < totalLength, "index into litDistLengths "
-                          "%u exceeds maximum of %u.", j, totalLength)
+                PD_ASSERT(j + k < totalLength, "index into litDistLengths %"PRIu32
+                          " exceeds maximum of %"PRIu32".", j, totalLength)
                 litDistLengths[j + k] = previousLength;
             }
             j += repeat - 1;
@@ -348,8 +350,8 @@ f_internal uint8_t *readBlock_dynamic
             uint8_t repeat = 3 + (uint8_t)readBits(src, 3, bitOffset, iterator);
             for(uint8_t k = 0; k < repeat; ++k)
             {
-                PD_ASSERT(j + k < totalLength, "index into litDistLengths "
-                          "%u exceeds maximum of %u.", j, totalLength)
+                PD_ASSERT(j + k < totalLength, "index into litDistLengths %"PRIu32
+                          " exceeds maximum of %"PRIu32".", j, totalLength)
                 litDistLengths[j + k] = 0;
             }
             j += repeat - 1;
@@ -361,8 +363,8 @@ f_internal uint8_t *readBlock_dynamic
             uint8_t repeat = 11 + (uint8_t)readBits(src, 7, bitOffset, iterator);
             for(uint8_t k = 0; k < repeat; ++k)
             {
-                PD_ASSERT(j + k < totalLength, "index into litDistLengths "
-                          "%u exceeds maximum of %u.", j, totalLength)
+                PD_ASSERT(j + k < totalLength, "index into litDistLengths %"PRIu32
+                          " exceeds maximum of %"PRIu32".", j, totalLength)
                 litDistLengths[j + k] = 0;
             }
             j += repeat - 1;
@@ -415,7 +417,8 @@ DeflateInfo dsReadDeflate
     uint64_t i = 0;
     while(!endStream)
     {
-        PD_TRACE("starting new block at byte %lu, bit offset %u.", i, bitOffset);
+        PD_TRACE("starting new block at byte %"PRIu64", bit offset %"PRIu8".",
+                 i, bitOffset);
         block.BFINAL = (uint8_t)readBits(src, 1, &bitOffset, &i);
         if(block.BFINAL)
         {
@@ -424,7 +427,7 @@ DeflateInfo dsReadDeflate
         }
 
         block.BTYPE = (uint8_t)readBits(src, 2, &bitOffset, &i);
-        PD_TRACE("BTYPE: %u", block.BTYPE);
+        PD_TRACE("BTYPE: %"PRIu8"", block.BTYPE);
 
         if(block.BTYPE == BTYPE_UNCROMPRESSED)
         {
@@ -475,6 +478,6 @@ result:
     {
         ++i;
     }
-    resultInfo.compressedBytesRead = i;
+    resultInfo.bytesRead = i;
     return resultInfo;
 }

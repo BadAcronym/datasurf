@@ -3,4 +3,4 @@
 ./clean
 ./run debug --compile-only
 
-nnd ./bin/debug/datasurftest
+raddbg ./bin/debug/datasurftest

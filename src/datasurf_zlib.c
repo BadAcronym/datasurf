@@ -65,13 +65,20 @@ DeflateInfo dsReadZlibPtr
     PD_TRACE("FDICT:  %"PRIu8, info.FDICT);
     PD_TRACE("FLEVEL: %"PRIu8, info.FLEVEL);
 
-    // uint32_t DICTID       = 0;
+    uint32_t DICTID       = 0;
     uint32_t madeChecksum = 0;
     uint32_t readChecksum = 0;
 
     if(info.FDICT)
     {
-        // DICTID = *(uint32_t*)(&zlib[2]);
+        DICTID = *(uint32_t*)(&zlib[2]);
+
+        //
+        PD_ERROR("unknown zlib dictionary ID: %"PRIu32, DICTID);
+        return defInfo;
+        //
+
+        // later, if entries are ever handled
         defInfo = dsReadDeflate(&zlib[6], dest, &madeChecksum, cap);
         readChecksum += (uint32_t)zlib[6 + defInfo.bytesRead] << 24;
         readChecksum += (uint32_t)zlib[7 + defInfo.bytesRead] << 16;
@@ -89,7 +96,6 @@ DeflateInfo dsReadZlibPtr
         defInfo.bytesRead += 6;
     }
 
-    // PD_DEBUG("DICTID: 0x%X", DICTID);
     PD_DEBUG("made checksum: 0x%X", madeChecksum);
     PD_DEBUG("read checksum: 0x%X", readChecksum);
     PD_DEBUG("read a total of %"PRIu64" compressed bytes.", defInfo.bytesRead);

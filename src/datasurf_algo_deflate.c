@@ -191,6 +191,12 @@ f_internal uint8_t *readBlock_nohuff
 
     PD_TRACE("identified LEN: %"PRIu32" bytes", LEN);
 
+    if(!LEN)
+    {
+        PD_TRACE("skipping 0-length block.");
+        return dst;
+    }
+
     PD_ASSERT(LEN - 1 < cap - (uint64_t)(dst - og), "output buffer overflow. trying to "
               "read length %"PRIu32", max %"PRIu64".", LEN, cap - (uint64_t)(dst - og));
 
@@ -432,8 +438,8 @@ DeflateInfo dsReadDeflate
             dst = readBlock_nohuff(src, dst, og, &bitOffset, &i, &adlerA, &adlerB, cap);
             if(!dst)
             {
-                PD_ERROR("failed to read uncompressed block.");
-                goto result;
+                PD_ERROR("failed to read uncompressed huffman block.");
+                break;
             }
 
             resultInfo.bytesWritten += (uint64_t)(dst - start);
@@ -445,7 +451,7 @@ DeflateInfo dsReadDeflate
             if(!dst)
             {
                 PD_ERROR("failed to read static huffman block.");
-                goto result;
+                goto error;
             }
 
             resultInfo.bytesWritten += (uint64_t)(dst - start);
@@ -457,7 +463,7 @@ DeflateInfo dsReadDeflate
             if(!dst)
             {
                 PD_ERROR("failed to read dynamic huffman block.");
-                goto result;
+                goto error;
             }
 
             resultInfo.bytesWritten += (uint64_t)(dst - start);
@@ -465,11 +471,14 @@ DeflateInfo dsReadDeflate
         else // block.BTYPE == BTYPE_RESERVED
         {
             PD_ERROR("BTYPE of 3 is reserved.");
-            goto result;
+            goto error;
         }
         PD_TRACE("ending deflate block at byte index %"PRIu64", bit offset %"PRIu8".",
                  i, bitOffset);
     }
+
+    *checksum = (adlerB << 16) | adlerA;
+    resultInfo.success = true;
 
     if(bitOffset)
     {
@@ -482,7 +491,8 @@ DeflateInfo dsReadDeflate
     *checksum = (adlerB << 16) | adlerA;
     resultInfo.success   = true;
     resultInfo.bytesRead = i;
+    return resultInfo;
 
-result:
+error:
     return resultInfo;
 }

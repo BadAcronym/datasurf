@@ -45,7 +45,7 @@ int main
     DeflateInfo dfInfo = {0};
 
     dfInfo = dsReadZlibPtr(uncompressed, testUncompressed, 53);
-    if(!dfInfo.bytesRead)
+    if(!dfInfo.success)
     {
         PD_FAIL("dsReadZlibPtr: could not read uncompressed string.");
         ++failed;
@@ -92,7 +92,7 @@ int main
     uint8_t testFastCompressed[99] = {0};
 
     dfInfo = dsReadZlibPtr(fastCompressed, testFastCompressed, 99);
-    if(!dfInfo.bytesRead)
+    if(!dfInfo.success)
     {
         PD_FAIL("dsReadZlibPtr: could not read string with fast compression.");
         ++failed;
@@ -151,7 +151,7 @@ int main
     uint8_t testMaxCompressed[61 * 39]  = {0};
 
     dfInfo = dsReadZlibPtr(maxCompressed, testMaxCompressed, 61 * 39);
-    if(!dfInfo.bytesRead)
+    if(!dfInfo.success)
     {
         PD_FAIL("dsReadZlibPtr: could not read string with max compression.");
         ++failed;
@@ -175,7 +175,7 @@ int main
     uint8_t  bigTest[totalSize];
 
     dfInfo = dsReadZlibPtr(bigDcodeZlib, bigTest, totalSize);
-    if(!dfInfo.bytesRead)
+    if(!dfInfo.success)
     {
         PD_FAIL("dsReadZlibPtr: could not read big data.");
         ++failed;
@@ -191,6 +191,24 @@ int main
         {
             PD_SUCCESS("passed dsReadZlibPtr with big data.");
         }
+    }
+
+    uint8_t stream[16] =
+    {
+        0x78, 0x9C, 0x0A, 0x02, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFB, 0x04, 0x00,
+        0x01, 0x98, 0x01, 0x45
+    };
+    uint8_t alignmentBuf[120] = {0};
+
+    dfInfo = dsReadZlibPtr(stream, alignmentBuf, sizeof(alignmentBuf));
+    if(!dfInfo.success)
+    {
+        PD_FAIL("dsReadZlibPtr: could not read big data.");
+        ++failed;
+    }
+    else
+    {
+        PD_SUCCESS("passed dsReadZlibPtr with 0 LEN.");
     }
 
     return failed;

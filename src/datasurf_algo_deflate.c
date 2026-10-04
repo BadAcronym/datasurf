@@ -470,7 +470,6 @@ DeflateInfo dsReadDeflate
     }
 
     *checksum = (adlerB << 16) | adlerA;
-
     resultInfo.success = true;
 
 result:

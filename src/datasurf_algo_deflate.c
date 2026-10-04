@@ -63,7 +63,7 @@ f_internal uint8_t *decodeHuffmanTrees
 ){
     PD_TRACE("decoding max. %"PRIu64" symbols from huffman tree.", cap);
 
-    for(uint64_t j = 0; j < cap; ++j)
+    for(;;)
     {
         uint16_t symbol = decodeSymbol(litLenTree, src, bitOffset, iterator);
 
@@ -163,8 +163,6 @@ f_internal uint8_t *decodeHuffmanTrees
             *adlerB = (*adlerB + *adlerA) % ADLER_PRIME;
         }
     }
-
-    return dst;
 }
 
 f_internal uint8_t *readBlock_nohuff
@@ -182,6 +180,7 @@ f_internal uint8_t *readBlock_nohuff
              *iterator, *bitOffset);
 
     readBits(src, (8 - *bitOffset), bitOffset, iterator);
+
     uint16_t LEN  = readBits(src, 8, bitOffset, iterator);
     LEN += (readBits(src, 8, bitOffset, iterator) << 8);
     uint16_t NLEN = readBits(src, 8, bitOffset, iterator);
@@ -477,11 +476,9 @@ DeflateInfo dsReadDeflate
                  i, bitOffset);
     }
 
-    *checksum = (adlerB << 16) | adlerA;
-    resultInfo.success = true;
-
     if(bitOffset)
     {
+        bitOffset = 0;
         ++i;
     }
 

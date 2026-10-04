@@ -83,15 +83,15 @@ DeflateInfo dsReadZlibPtr
         defInfo = dsReadDeflate(&zlib[2], dest, &madeChecksum, cap);
         uint8_t *trailer = (uint8_t*)(zlib + 2 + defInfo.bytesRead);
 
-        readChecksum += (uint32_t)trailer[0] << 24;
-        readChecksum += (uint32_t)trailer[1] << 16;
-        readChecksum += (uint32_t)trailer[2] << 8;
-        readChecksum += (uint32_t)trailer[3];
+        readChecksum = (uint32_t)trailer[0] << 24 |
+                       (uint32_t)trailer[1] << 16 |
+                       (uint32_t)trailer[2] << 8  |
+                       (uint32_t)trailer[3];
         defInfo.bytesRead += 4;
     }
 
-    PD_DEBUG("made checksum: 0x%X", madeChecksum);
-    PD_DEBUG("read checksum: 0x%X", readChecksum);
+    PD_DEBUG("made checksum: 0x%"PRIX32, madeChecksum);
+    PD_DEBUG("read checksum: 0x%"PRIX32, readChecksum);
     PD_DEBUG("read a total of %"PRIu64" compressed bytes.", defInfo.bytesRead);
     PD_DEBUG("wrote a total of %"PRIu64" decompressed bytes.", defInfo.bytesWritten);
 

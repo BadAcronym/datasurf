@@ -33,7 +33,7 @@ uint16_t readBits
         bitCount   -= take;
         *bitOffset += take;
 
-        if(*bitOffset > 7)
+        if(*bitOffset == 8)
         {
             *bitOffset = 0;
             ++(*iterator);

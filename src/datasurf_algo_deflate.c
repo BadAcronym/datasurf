@@ -407,12 +407,11 @@ DeflateInfo dsReadDeflate
     uint32_t adlerA    = 1;
     uint32_t adlerB    = 0;
 
-    bool endStream = false;
-
     DeflateInfo  resultInfo = {0};
     DeflateBlock block      = {0};
 
     uint64_t i = 0;
+    bool endStream = false;
     while(!endStream)
     {
         PD_TRACE("starting new block at byte %"PRIu64", bit offset %"PRIu8".",
@@ -472,10 +471,6 @@ DeflateInfo dsReadDeflate
                  i, bitOffset);
     }
 
-    *checksum = (adlerB << 16) | adlerA;
-    resultInfo.success = true;
-
-result:
     if(bitOffset)
     {
         ++i;
@@ -484,6 +479,10 @@ result:
     PD_TRACE("ending deflate stream at byte index %"PRIu64", bit offset %"PRIu8".",
              i, bitOffset);
 
+    *checksum = (adlerB << 16) | adlerA;
+    resultInfo.success   = true;
     resultInfo.bytesRead = i;
+
+result:
     return resultInfo;
 }

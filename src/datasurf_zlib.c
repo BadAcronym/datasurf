@@ -77,23 +77,17 @@ DeflateInfo dsReadZlibPtr
         PD_ERROR("unknown zlib dictionary ID: %"PRIu32, DICTID);
         return defInfo;
         //
-
-        // later, if entries are ever handled
-        defInfo = dsReadDeflate(&zlib[6], dest, &madeChecksum, cap);
-        readChecksum += (uint32_t)zlib[6 + defInfo.bytesRead] << 24;
-        readChecksum += (uint32_t)zlib[7 + defInfo.bytesRead] << 16;
-        readChecksum += (uint32_t)zlib[8 + defInfo.bytesRead] << 8;
-        readChecksum += (uint32_t)zlib[9 + defInfo.bytesRead];
-        defInfo.bytesRead += 10;
     }
     else
     {
         defInfo = dsReadDeflate(&zlib[2], dest, &madeChecksum, cap);
-        readChecksum += (uint32_t)zlib[2 + defInfo.bytesRead] << 24;
-        readChecksum += (uint32_t)zlib[3 + defInfo.bytesRead] << 16;
-        readChecksum += (uint32_t)zlib[4 + defInfo.bytesRead] << 8;
-        readChecksum += (uint32_t)zlib[5 + defInfo.bytesRead];
-        defInfo.bytesRead += 6;
+        uint8_t *trailer = (uint8_t*)(zlib + 2 + defInfo.bytesRead);
+
+        readChecksum += (uint32_t)trailer[0] << 24;
+        readChecksum += (uint32_t)trailer[1] << 16;
+        readChecksum += (uint32_t)trailer[2] << 8;
+        readChecksum += (uint32_t)trailer[3];
+        defInfo.bytesRead += 4;
     }
 
     PD_DEBUG("made checksum: 0x%X", madeChecksum);

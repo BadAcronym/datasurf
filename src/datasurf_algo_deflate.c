@@ -80,8 +80,6 @@ f_internal uint8_t *decodeHuffmanTrees
         }
         else if(symbol == 256)
         {
-            PD_TRACE("ending dynamic huffman block at byte %"PRIu64", bit offset %"
-                     PRIu8".", *iterator, *bitOffset);
             return dst;
         }
 
@@ -435,6 +433,7 @@ DeflateInfo dsReadDeflate
             dst = readBlock_nohuff(src, dst, og, &bitOffset, &i, &adlerA, &adlerB, cap);
             if(!dst)
             {
+                PD_ERROR("failed to read uncompressed block.");
                 goto result;
             }
 
@@ -446,6 +445,7 @@ DeflateInfo dsReadDeflate
             dst = readBlock_static(src, dst, og, &bitOffset, &i, &adlerA, &adlerB, cap);
             if(!dst)
             {
+                PD_ERROR("failed to read static huffman block.");
                 goto result;
             }
 
@@ -457,6 +457,7 @@ DeflateInfo dsReadDeflate
             dst = readBlock_dynamic(src, dst, og, &bitOffset, &i, &adlerA, &adlerB, cap);
             if(!dst)
             {
+                PD_ERROR("failed to read dynamic huffman block.");
                 goto result;
             }
 
@@ -467,6 +468,8 @@ DeflateInfo dsReadDeflate
             PD_ERROR("BTYPE of 3 is reserved.");
             goto result;
         }
+        PD_TRACE("ending deflate block at byte index %"PRIu64", bit offset %"PRIu8".",
+                 i, bitOffset);
     }
 
     *checksum = (adlerB << 16) | adlerA;
@@ -477,6 +480,10 @@ result:
     {
         ++i;
     }
+
+    PD_TRACE("ending deflate stream at byte index %"PRIu64", bit offset %"PRIu8".",
+             i, bitOffset);
+
     resultInfo.bytesRead = i;
     return resultInfo;
 }

@@ -179,7 +179,10 @@ f_internal uint8_t *readBlock_nohuff
     PD_TRACE("reading uncompressed block at byte %"PRIu64", bit offset %"PRIu8".",
              *iterator, *bitOffset);
 
-    readBits(src, (8 - *bitOffset), bitOffset, iterator);
+    if(*bitOffset)
+    {
+        readBits(src, (8 - *bitOffset), bitOffset, iterator);
+    }
 
     uint16_t LEN  = readBits(src, 8, bitOffset, iterator);
     LEN += (readBits(src, 8, bitOffset, iterator) << 8);
@@ -438,7 +441,7 @@ DeflateInfo dsReadDeflate
             if(!dst)
             {
                 PD_ERROR("failed to read uncompressed huffman block.");
-                break;
+                goto error;
             }
 
             resultInfo.bytesWritten += (uint64_t)(dst - start);

@@ -1,5 +1,5 @@
-#ifndef PUDDLE_PRINT_MACROS
-#define PUDDLE_PRINT_MACROS
+#ifndef DATASURF_PRINT_MACROS
+#define DATASURF_PRINT_MACROS
 
 #include <stdio.h>
 #include <stdlib.h>

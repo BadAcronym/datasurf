@@ -1,8 +1,8 @@
 #include "datasurf_main.h"
+#include "ds_print_macros.h"
 #include "datasurf_huffman.h"
 
 #include "pd_dyn_arr.h"
-#include "pd_print_macros.h"
 
 const uint8_t bitmasks[9] =
 {
@@ -16,8 +16,8 @@ uint16_t readBits
     uint8_t       *bitOffset,
     uint64_t      *iterator
 ){
-    PD_ASSERT(*bitOffset < 8, "bitOffset cannot be bigger than 7.");
-    PD_ASSERT(bitCount < 16, "maximum bit count to be read is 16.");
+    DS_ASSERT(*bitOffset < 8, "bitOffset cannot be bigger than 7.");
+    DS_ASSERT(bitCount < 16, "maximum bit count to be read is 16.");
 
     uint16_t value    = 0;
     uint8_t  bitsRead = 0;
@@ -48,7 +48,7 @@ uint16_t reverseBits
     uint16_t code,
     uint16_t length
 ){
-    PD_ASSERT(length < 16, "cannot reverse more than 15 bits.");
+    DS_ASSERT(length < 16, "cannot reverse more than 15 bits.");
 
     uint16_t result = 0;
 
@@ -58,7 +58,7 @@ uint16_t reverseBits
         code >>= 1;
     }
 
-    PD_ASSERT(result < (1u << length), "result (length %"PRIu32") %"PRIu32" >= %"PRIu32" (maximum)",
+    DS_ASSERT(result < (1u << length), "result (length %"PRIu32") %"PRIu32" >= %"PRIu32" (maximum)",
               length, result, 1u << length);
 
     return result;
@@ -92,7 +92,7 @@ void makeCanonicalCodes
     for(uint8_t i = 1; i < MAX_CODELEN + 1; ++i)
     {
         left = (left << 1u) - count[i];
-        PD_ASSERT(left > -1, "tree is oversubscribed.")
+        DS_ASSERT(left > -1, "tree is oversubscribed.")
     }
 
     for(uint16_t symbol = 0; symbol < symbolCount; ++symbol)
@@ -107,7 +107,7 @@ void makeCanonicalCodes
         {
             uint16_t canonical = nextCode[length]++;
 
-            PD_ASSERT(canonical < (1u << length), "canonical code overflow: "
+            DS_ASSERT(canonical < (1u << length), "canonical code overflow: "
                       "symbol: %"PRIu32" length: %"PRIu32" code: %"PRIu32"", symbol,
                       length, canonical);
 
@@ -141,7 +141,7 @@ void insertCode
             child = (int16_t)(pdArrSize(tree->nodes) - 1);
             tree->nodes[node].children[bit] = child;
 
-            PD_ASSERT(child >= 0 && child < (int16_t)pdArrSize(tree->nodes),
+            DS_ASSERT(child >= 0 && child < (int16_t)pdArrSize(tree->nodes),
                       "invalid Huffman child index: %"PRIi16", node count: %"PRIu64,
                       child, pdArrSize(tree->nodes));
         }
@@ -149,7 +149,7 @@ void insertCode
         node = child;
     }
 
-    PD_ASSERT(tree->nodes[node].symbol == -1, "huffman tree is constructed incorrectly."
+    DS_ASSERT(tree->nodes[node].symbol == -1, "huffman tree is constructed incorrectly."
               "\nSymbol %"PRIu32" at node %"PRIu32" cannot be overwritten.",
               tree->nodes[node].symbol, node);
 
@@ -165,7 +165,7 @@ void buildTree
     HuffmanNode node   = {0};
     HuffmanCode *codes = calloc(symbolCount, sizeof(HuffmanCode));
 
-    PD_ASSERT(codes, "failed to allocate HuffmanCode array.")
+    DS_ASSERT(codes, "failed to allocate HuffmanCode array.")
 
     // root node
     node.symbol      = -1;
@@ -184,7 +184,7 @@ void buildTree
         insertCode(tree, codes[i].code, codes[i].symbol, codes[i].length);
     }
 
-    PD_TRACE("inserted %"PRIu32" codes into the tree.", symbolCount);
+    DS_TRACE("inserted %"PRIu32" codes into the tree.", symbolCount);
 
     free(codes);
 }
@@ -206,7 +206,7 @@ uint16_t decodeSymbol
     uint8_t           *currBitOffset,
     uint64_t          *iterator
 ){
-    PD_ASSERT(*currBitOffset < 8, "currBitOffset cannot be bigger than 7.");
+    DS_ASSERT(*currBitOffset < 8, "currBitOffset cannot be bigger than 7.");
 
     int32_t node = 0;
 
@@ -219,7 +219,7 @@ uint16_t decodeSymbol
 
         if(node < 0)
         {
-            PD_ERROR("huffman code is invalid for the tree that was given.");
+            DS_ERROR("huffman code is invalid for the tree that was given.");
             return UINT16_MAX;
         }
 
@@ -229,7 +229,7 @@ uint16_t decodeSymbol
         }
     }
 
-    PD_ERROR("could not find huffman code (%"PRIu32") in the tree that was given "
+    DS_ERROR("could not find huffman code (%"PRIu32") in the tree that was given "
              "within %"PRIu32" bits.", node, MAX_CODELEN);
     return UINT16_MAX;
 }

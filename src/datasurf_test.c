@@ -1,5 +1,5 @@
 #include "datasurf_main.h"
-#include "pd_print_macros.h"
+#include "ds_print_macros.h"
 
 f_internal bool verify
 (
@@ -7,13 +7,13 @@ f_internal bool verify
     uint8_t  *reconstructed,
     uint64_t length
 ){
-    PD_DEBUG("verifying %"PRIu64" bytes.", length);
+    DS_DEBUG("verifying %"PRIu64" bytes.", length);
 
     for(uint16_t i = 0; i < length; ++i)
     {
         if(dcode[i] != reconstructed[i])
         {
-            PD_ERROR("verifying failed @ byte %"PRIu32": expected: 0x%X, got: 0x%X.",
+            DS_ERROR("verifying failed @ byte %"PRIu32": expected: 0x%X, got: 0x%X.",
                      i, dcode[i], reconstructed[i]);
             return false;
         }
@@ -47,19 +47,19 @@ int main
     dfInfo = dsReadZlibPtr(uncompressed, testUncompressed, 53);
     if(!dfInfo.success)
     {
-        PD_FAIL("dsReadZlibPtr: could not read uncompressed string.");
+        DS_FAIL("dsReadZlibPtr: could not read uncompressed string.");
         ++failed;
     }
     else
     {
         if(!verify(uncompressed + 7, testUncompressed, 53))
         {
-            PD_FAIL("decoded dsReadZlibPtr uncompressed data is incorrect.");
+            DS_FAIL("decoded dsReadZlibPtr uncompressed data is incorrect.");
             ++failed;
         }
         else
         {
-            PD_SUCCESS("passed dsReadZlibPtr with uncompressed data.");
+            DS_SUCCESS("passed dsReadZlibPtr with uncompressed data.");
         }
     }
 
@@ -94,19 +94,19 @@ int main
     dfInfo = dsReadZlibPtr(fastCompressed, testFastCompressed, 99);
     if(!dfInfo.success)
     {
-        PD_FAIL("dsReadZlibPtr: could not read string with fast compression.");
+        DS_FAIL("dsReadZlibPtr: could not read string with fast compression.");
         ++failed;
     }
     else
     {
         if(!verify(fastCompressedDcode, testFastCompressed, 99))
         {
-            PD_FAIL("decoded dsReadZlibPtr data with fast compression is incorrect.");
+            DS_FAIL("decoded dsReadZlibPtr data with fast compression is incorrect.");
             ++failed;
         }
         else
         {
-            PD_SUCCESS("passed dsReadZlibPtr with fast compression.");
+            DS_SUCCESS("passed dsReadZlibPtr with fast compression.");
         }
     }
 
@@ -153,19 +153,19 @@ int main
     dfInfo = dsReadZlibPtr(maxCompressed, testMaxCompressed, 61 * 39);
     if(!dfInfo.success)
     {
-        PD_FAIL("dsReadZlibPtr: could not read string with max compression.");
+        DS_FAIL("dsReadZlibPtr: could not read string with max compression.");
         ++failed;
     }
     else
     {
         if(!verify(maxCompressedDcode, testMaxCompressed, 61 * 39))
         {
-            PD_FAIL("decoded dsReadZlibPtr data with max compression is incorrect.");
+            DS_FAIL("decoded dsReadZlibPtr data with max compression is incorrect.");
             ++failed;
         }
         else
         {
-            PD_SUCCESS("passed dsReadZlibPtr with max compression.");
+            DS_SUCCESS("passed dsReadZlibPtr with max compression.");
         }
     }
 
@@ -177,19 +177,19 @@ int main
     dfInfo = dsReadZlibPtr(bigDcodeZlib, bigTest, totalSize);
     if(!dfInfo.success)
     {
-        PD_FAIL("dsReadZlibPtr: could not read big data.");
+        DS_FAIL("dsReadZlibPtr: could not read big data.");
         ++failed;
     }
     else
     {
         if(!verify(bigUncompressed, bigTest, totalSize))
         {
-            PD_FAIL("decoded dsReadZlibPtr data with big data is incorrect.");
+            DS_FAIL("decoded dsReadZlibPtr data with big data is incorrect.");
             ++failed;
         }
         else
         {
-            PD_SUCCESS("passed dsReadZlibPtr with big data.");
+            DS_SUCCESS("passed dsReadZlibPtr with big data.");
         }
     }
 
@@ -203,12 +203,12 @@ int main
     dfInfo = dsReadZlibPtr(stream, alignmentBuf, sizeof(alignmentBuf));
     if(!dfInfo.success)
     {
-        PD_FAIL("dsReadZlibPtr: could not read big data.");
+        DS_FAIL("dsReadZlibPtr: could not read big data.");
         ++failed;
     }
     else
     {
-        PD_SUCCESS("passed dsReadZlibPtr with 0 LEN.");
+        DS_SUCCESS("passed dsReadZlibPtr with 0 LEN.");
     }
 
     return failed;

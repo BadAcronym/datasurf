@@ -51,7 +51,7 @@
         fprintf(stdout, "\033[33;1m" __LOCATION__ "\n\033[33;1;7mWARNING: " \
                 FIRST(__VA_ARGS__) "\033[0m\n" REST(__VA_ARGS__))
 
-#ifdef DS_DEBUG
+#ifdef DS_PRI_DEBUG
     #define DS_ASSERT(condition, ...)                               \
     do                                                              \
     {                                                               \
@@ -73,7 +73,7 @@
     #define DS_DEBUG(...)
 #endif
 
-#ifdef DS_TRACE
+#ifdef DS_PRI_TRACE
     #define DS_TRACE(...) \
             printf(FIRST(__VA_ARGS__) "\n" REST(__VA_ARGS__))
 #else

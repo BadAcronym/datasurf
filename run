@@ -25,14 +25,14 @@ src/datasurf_algo_deflate.c \
 
 args_release="-O2"
 
-args_debug="-DDEBUG -DDS_DEBUG -g -O0"
+args_debug="-DDEBUG -DDS_PRI_DEBUG -g -O0"
 
 args_asan="$args_debug -DASAN \
 -fsanitize=address,leak,undefined \
 -fno-omit-frame-pointer \
 -static-libasan"
 
-args_trace="$args_debug -DDS_TRACE"
+args_trace="$args_debug -DDS_PRI_TRACE"
 
 function compile()
 {

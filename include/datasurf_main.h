@@ -4,18 +4,15 @@
 #define f_internal static
 #define s_global   static
 
-#include <stdint.h>
-#include <inttypes.h>
-#include <stdbool.h>
-#include <stdio.h>
+#include "pd_int_types.h"
 
 #define ADLER_PRIME 65521ULL
 
 typedef struct DeflateInfo
 {
-    uint64_t bytesRead;
-    uint64_t bytesWritten;
-    bool     success;
+    u64  bytesRead;
+    u64  bytesWritten;
+    bool success;
 }
 DeflateInfo;
 
@@ -24,19 +21,19 @@ DeflateInfo;
 // as well as the decompressed amount of bytes produced.
 extern DeflateInfo dsReadZlibPtr
 (
-    const uint8_t *zlib,
-    uint8_t       *dest,
-    uint64_t      cap
+    const u08 *zlib,
+    u08       *dest,
+    u64       cap
 );
 
 // returns both the compressed amount of bytes read,
 // as well as the decompressed amount of bytes produced.
 extern DeflateInfo dsReadDeflate
 (
-    const uint8_t *src,
-    uint8_t       *dst,
-    uint32_t      *checksum,
-    uint64_t      cap
+    const u08 *src,
+    u08       *dst,
+    u32       *checksum,
+    u64       cap
 );
 
 #endif

@@ -2,12 +2,14 @@
 #include "ds_print_macros.h"
 #include "datasurf_huffman.h"
 
-s_global const uint8_t dynHuffCodelenghOrder[19] =
+#include <inttypes.h>
+
+s_global const u08 dynHuffCodelenghOrder[19] =
 {
     16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
 };
 
-s_global const uint16_t lengthBases[28] =
+s_global const u16 lengthBases[28] =
 {
       3,   4,   5,   6,
       7,   8,   9,  10,
@@ -18,7 +20,7 @@ s_global const uint16_t lengthBases[28] =
     131, 163, 195, 227,
 };
 
-s_global const uint8_t lengthExtraBits[28] =
+s_global const u08 lengthExtraBits[28] =
 {
     0, 0, 0, 0,
     0, 0, 0, 0,
@@ -29,7 +31,7 @@ s_global const uint8_t lengthExtraBits[28] =
     5, 5, 5, 5,
 };
 
-s_global const uint16_t distanceBases[30] =
+s_global const u16 distanceBases[30] =
 {
      1,    2,    3,    4,     5,     7,
      9,    13,   17,   25,    33,    49,
@@ -38,7 +40,7 @@ s_global const uint16_t distanceBases[30] =
      4097, 6145, 8193, 12289, 16385, 24577
 };
 
-s_global const uint8_t distanceExtraBits[30] =
+s_global const u08 distanceExtraBits[30] =
 {
     0,  0,  0,  0,  1,  1,
     2,  2,  3,  3,  4,  4,
@@ -47,24 +49,24 @@ s_global const uint8_t distanceExtraBits[30] =
     11, 11, 12, 12, 13, 13
 };
 
-f_internal uint8_t *decodeHuffmanTrees
+f_internal u08 *decodeHuffmanTrees
 (
-    HuffmanTree   *litLenTree,
-    HuffmanTree   *distanceTree,
-    const uint8_t *src,
-    uint8_t       *dst,
-    uint8_t       *og,
-    uint8_t       *bitOffset,
-    uint64_t      *iterator,
-    uint32_t      *adlerA,
-    uint32_t      *adlerB,
-    uint64_t      cap
+    HuffmanTree *litLenTree,
+    HuffmanTree *distanceTree,
+    const u08   *src,
+    u08         *dst,
+    u08         *og,
+    u08         *bitOffset,
+    u64         *iterator,
+    u32         *adlerA,
+    u32         *adlerB,
+    u64         cap
 ){
     DS_TRACE("decoding max. %"PRIu64" symbols from huffman tree.", cap);
 
     for(;;)
     {
-        uint16_t symbol = decodeSymbol(litLenTree, src, bitOffset, iterator);
+        u16 symbol = decodeSymbol(litLenTree, src, bitOffset, iterator);
 
         DS_ASSERT(symbol < 286, "a symbol of 286 or higher cannot be "
                   "interpreted for the literal/length tree.");
@@ -72,7 +74,7 @@ f_internal uint8_t *decodeHuffmanTrees
         if(symbol < 256)
         {
             // DS_TRACE("wrote literal: 0x%X", symbol);
-            *dst    = (uint8_t)symbol;
+            *dst    = (u08)symbol;
             *adlerA = (*adlerA + *dst++)  % ADLER_PRIME;
             *adlerB = (*adlerB + *adlerA) % ADLER_PRIME;
             continue;
@@ -82,7 +84,7 @@ f_internal uint8_t *decodeHuffmanTrees
             return dst;
         }
 
-        uint16_t length = 0;
+        u16 length = 0;
 
         if(symbol < 265)
         {
@@ -90,16 +92,16 @@ f_internal uint8_t *decodeHuffmanTrees
         }
         else if(symbol < 285)
         {
-            uint16_t index     = symbol - 257;
-            uint8_t  bitCount  = lengthExtraBits[index];
-            uint32_t extraBits = 0;
+            u16 index     = symbol - 257;
+            u08 bitCount  = lengthExtraBits[index];
+            u32 extraBits = 0;
 
             if(bitCount)
             {
                 extraBits = readBits(src, bitCount, bitOffset, iterator);
             }
 
-            length = (uint16_t)(lengthBases[index] + extraBits);
+            length = (u16)(lengthBases[index] + extraBits);
         }
         else // symbol == 285
         {
@@ -111,7 +113,7 @@ f_internal uint8_t *decodeHuffmanTrees
         DS_ASSERT(symbol < 30, "a symbol of 30 or higher cannot be "
                   "interpreted for the distance tree.");
 
-        uint32_t distance = 0;
+        u32 distance = 0;
 
         if(symbol < 4)
         {
@@ -119,8 +121,8 @@ f_internal uint8_t *decodeHuffmanTrees
         }
         else // symbol < 30
         {
-            uint8_t  bitCount  = distanceExtraBits[symbol];
-            uint32_t extraBits = 0;
+            u08  bitCount  = distanceExtraBits[symbol];
+            u32 extraBits = 0;
 
             if(bitCount)
             {
@@ -130,7 +132,7 @@ f_internal uint8_t *decodeHuffmanTrees
             distance = distanceBases[symbol] + extraBits;
         }
 
-        uint64_t produced = (uint64_t)(dst - og);
+        u64 produced = (u64)(dst - og);
 
         if(distance > produced)
         {
@@ -153,7 +155,7 @@ f_internal uint8_t *decodeHuffmanTrees
 
         // DS_TRACE("LZ77: (length: %"PRIu32", distance: %"PRIu32")", length, distance);
 
-        for(uint16_t l = 0; l < length; ++l)
+        for(u16 l = 0; l < length; ++l)
         {
             // DS_TRACE("wrote LZ77: 0x%X <- byte #%"PRIu64", source byte #%"PRIu64"",
                      // *(dst - distance), (dst - og), (dst - og - distance));
@@ -164,16 +166,16 @@ f_internal uint8_t *decodeHuffmanTrees
     }
 }
 
-f_internal uint8_t *readBlock_nohuff
+f_internal u08 *readBlock_nohuff
 (
-    const uint8_t *src,
-    uint8_t       *dst,
-    uint8_t       *og,
-    uint8_t       *bitOffset,
-    uint64_t      *iterator,
-    uint32_t      *adlerA,
-    uint32_t      *adlerB,
-    uint64_t      cap
+    const u08 *src,
+    u08       *dst,
+    u08       *og,
+    u08       *bitOffset,
+    u64       *iterator,
+    u32       *adlerA,
+    u32       *adlerB,
+    u64       cap
 ){
     DS_TRACE("reading uncompressed block at byte %"PRIu64", bit offset %"PRIu8".",
              *iterator, *bitOffset);
@@ -183,12 +185,12 @@ f_internal uint8_t *readBlock_nohuff
         readBits(src, (8 - *bitOffset), bitOffset, iterator);
     }
 
-    uint16_t LEN  = readBits(src, 8, bitOffset, iterator);
+    u16 LEN = readBits(src, 8, bitOffset, iterator);
     LEN += (readBits(src, 8, bitOffset, iterator) << 8);
-    uint16_t NLEN = readBits(src, 8, bitOffset, iterator);
+    u16 NLEN = readBits(src, 8, bitOffset, iterator);
     NLEN += (readBits(src, 8, bitOffset, iterator) << 8);
 
-    uint16_t COMP = LEN ^ 0xFFFF;
+    u16 COMP = LEN ^ 0xFFFF;
 
     DS_TRACE("identified LEN: %"PRIu32" bytes", LEN);
 
@@ -198,10 +200,10 @@ f_internal uint8_t *readBlock_nohuff
         return dst;
     }
 
-    DS_ASSERT(LEN - 1 < cap - (uint64_t)(dst - og), "output buffer overflow. trying to "
-              "read length %"PRIu32", max %"PRIu64".", LEN, cap - (uint64_t)(dst - og));
+    DS_ASSERT(LEN - 1 < cap - (u64)(dst - og), "output buffer overflow. trying to "
+              "read length %"PRIu32", max %"PRIu64".", LEN, cap - (u64)(dst - og));
 
-    if(LEN > cap - (uint64_t)(dst - og))
+    if(LEN > cap - (u64)(dst - og))
     {
         return 0;
     }
@@ -213,7 +215,7 @@ f_internal uint8_t *readBlock_nohuff
         return 0;
     }
 
-    for(uint32_t j = 0; j < LEN; ++j)
+    for(u32 j = 0; j < LEN; ++j)
     {
         *dst    = src[*iterator];
         *adlerA = (*adlerA + *dst++)  % ADLER_PRIME;
@@ -224,40 +226,40 @@ f_internal uint8_t *readBlock_nohuff
     return dst;
 }
 
-f_internal uint8_t *readBlock_static
+f_internal u08 *readBlock_static
 (
-    const uint8_t *src,
-    uint8_t       *dst,
-    uint8_t       *og,
-    uint8_t       *bitOffset,
-    uint64_t      *iterator,
-    uint32_t      *adlerA,
-    uint32_t      *adlerB,
-    uint64_t      cap
+    const u08 *src,
+    u08       *dst,
+    u08       *og,
+    u08       *bitOffset,
+    u64       *iterator,
+    u32       *adlerA,
+    u32       *adlerB,
+    u64       cap
 ){
     DS_TRACE("reading static block at byte %"PRIu64", bit offset %"PRIu8".",
              *iterator, *bitOffset);
 
-    uint16_t litLenLengths[288] = {0};
+    u16 litLenLengths[288] = {0};
 
-    for(uint16_t i = 0; i < 144; ++i)
+    for(u16 i = 0; i < 144; ++i)
     {
         litLenLengths[i] = 8;
     }
-    for(uint16_t i = 144; i < 256; ++i)
+    for(u16 i = 144; i < 256; ++i)
     {
         litLenLengths[i] = 9;
     }
-    for(uint16_t i = 256; i < 280; ++i)
+    for(u16 i = 256; i < 280; ++i)
     {
         litLenLengths[i] = 7;
     }
-    for(uint16_t i = 280; i < 288; ++i)
+    for(u16 i = 280; i < 288; ++i)
     {
         litLenLengths[i] = 8;
     }
-    uint16_t distLengths[32] = {0};
-    for(uint16_t i = 0; i < 32; ++i)
+    u16 distLengths[32] = {0};
+    for(u16 i = 0; i < 32; ++i)
     {
         distLengths[i] = 5;
     }
@@ -277,25 +279,25 @@ f_internal uint8_t *readBlock_static
     return dst;
 }
 
-f_internal uint8_t *readBlock_dynamic
+f_internal u08 *readBlock_dynamic
 (
-    const uint8_t *src,
-    uint8_t       *dst,
-    uint8_t       *og,
-    uint8_t       *bitOffset,
-    uint64_t      *iterator,
-    uint32_t      *adlerA,
-    uint32_t      *adlerB,
-    uint64_t      cap
+    const u08 *src,
+    u08       *dst,
+    u08       *og,
+    u08       *bitOffset,
+    u64       *iterator,
+    u32       *adlerA,
+    u32       *adlerB,
+    u64       cap
 ){
     DS_TRACE("reading dynamic block at byte %"PRIu64", bit offset %"PRIu8".",
              *iterator, *bitOffset);
 
     DynHuffBlock dBlock = {0};
 
-    dBlock.HLIT  = (uint8_t)readBits(src, 5, bitOffset, iterator);
-    dBlock.HDIST = (uint8_t)readBits(src, 5, bitOffset, iterator);
-    dBlock.HCLEN = (uint8_t)readBits(src, 4, bitOffset, iterator);
+    dBlock.HLIT  = (u08)readBits(src, 5, bitOffset, iterator);
+    dBlock.HDIST = (u08)readBits(src, 5, bitOffset, iterator);
+    dBlock.HCLEN = (u08)readBits(src, 4, bitOffset, iterator);
 
     DS_TRACE("HLIT:  %2"PRIu16", actual: %3"PRIu16, dBlock.HLIT,  dBlock.HLIT  + 257);
     DS_TRACE("HDIST: %2"PRIu16", actual: %3"PRIu16, dBlock.HDIST, dBlock.HDIST + 1);
@@ -303,20 +305,20 @@ f_internal uint8_t *readBlock_dynamic
     DS_TRACE("read header at byte %"PRIu64", bit offset %"PRIu8".",
              *iterator, *bitOffset);
 
-    uint16_t compressLengths[19] = {0};
+    u16 compressLengths[19] = {0};
 
     // read HCLEN + 4 number of codelengths, each being 3 bits.
-    for(uint8_t j = 0; j < dBlock.HCLEN + 4; ++j)
+    for(u08 j = 0; j < dBlock.HCLEN + 4; ++j)
     {
-        uint8_t symbol = dynHuffCodelenghOrder[j];
-        compressLengths[symbol] = (uint8_t)readBits(src, 3, bitOffset, iterator);
+        u08 symbol = dynHuffCodelenghOrder[j];
+        compressLengths[symbol] = (u08)readBits(src, 3, bitOffset, iterator);
     }
 
-    uint16_t litLenTreeLength = dBlock.HLIT  + 257;
-    uint8_t  distTreeLength   = dBlock.HDIST + 1;
-    uint16_t totalLength      = litLenTreeLength + distTreeLength;
-    uint16_t litDistLengths[totalLength];
-    uint16_t previousLength = 0;
+    u16 litLenTreeLength = dBlock.HLIT  + 257;
+    u08  distTreeLength   = dBlock.HDIST + 1;
+    u16 totalLength      = litLenTreeLength + distTreeLength;
+    u16 litDistLengths[totalLength];
+    u16 previousLength = 0;
 
     // I now need to model and construct the "canonical" huffman tree
     // using the lengths in compressLengths, before I can obtain the
@@ -324,9 +326,9 @@ f_internal uint8_t *readBlock_dynamic
     HuffmanTree encodedTree = {0};
     buildTree(&encodedTree, compressLengths, 19);
 
-    for(uint16_t j = 0; j < totalLength; ++j)
+    for(u16 j = 0; j < totalLength; ++j)
     {
-        uint16_t symbol = decodeSymbol(&encodedTree, src, bitOffset, iterator);
+        u16 symbol = decodeSymbol(&encodedTree, src, bitOffset, iterator);
 
         DS_ASSERT(symbol < 19, "A symbol above 18 (%"PRIu32") from the compressed tree"
                   " cannot be interpreted.", symbol);
@@ -334,14 +336,14 @@ f_internal uint8_t *readBlock_dynamic
         if(symbol < 16)
         {
             // literal length
-            litDistLengths[j] = (uint8_t)symbol;
-            previousLength    = (uint8_t)symbol;
+            litDistLengths[j] = (u08)symbol;
+            previousLength    = (u08)symbol;
         }
         else if(symbol == 16)
         {
             // repeat previous length, 3-6 times
-            uint8_t repeat = 3 + (uint8_t)readBits(src, 2, bitOffset, iterator);
-            for(uint8_t k = 0; k < repeat; ++k)
+            u08 repeat = 3 + (u08)readBits(src, 2, bitOffset, iterator);
+            for(u08 k = 0; k < repeat; ++k)
             {
                 DS_ASSERT(j + k < totalLength, "index into litDistLengths %"PRIu32
                           " exceeds maximum of %"PRIu32".", j, totalLength)
@@ -352,8 +354,8 @@ f_internal uint8_t *readBlock_dynamic
         else if(symbol == 17)
         {
             // repeat zero, 3-10 times
-            uint8_t repeat = 3 + (uint8_t)readBits(src, 3, bitOffset, iterator);
-            for(uint8_t k = 0; k < repeat; ++k)
+            u08 repeat = 3 + (u08)readBits(src, 3, bitOffset, iterator);
+            for(u08 k = 0; k < repeat; ++k)
             {
                 DS_ASSERT(j + k < totalLength, "index into litDistLengths %"PRIu32
                           " exceeds maximum of %"PRIu32".", j, totalLength)
@@ -365,8 +367,8 @@ f_internal uint8_t *readBlock_dynamic
         else if(symbol == 18)
         {
             // repeat zero, 11-138 times.
-            uint8_t repeat = 11 + (uint8_t)readBits(src, 7, bitOffset, iterator);
-            for(uint8_t k = 0; k < repeat; ++k)
+            u08 repeat = 11 + (u08)readBits(src, 7, bitOffset, iterator);
+            for(u08 k = 0; k < repeat; ++k)
             {
                 DS_ASSERT(j + k < totalLength, "index into litDistLengths %"PRIu32
                           " exceeds maximum of %"PRIu32".", j, totalLength)
@@ -403,39 +405,39 @@ f_internal uint8_t *readBlock_dynamic
 
 DeflateInfo dsReadDeflate
 (
-    const uint8_t *src,
-    uint8_t       *dst,
-    uint32_t      *checksum,
-    uint64_t      cap
+    const u08 *src,
+    u08       *dst,
+    u32       *checksum,
+    u64       cap
 ){
-    uint8_t *og = dst;
+    u08 *og = dst;
 
-    uint8_t  bitOffset = 0;
-    uint32_t adlerA    = 1;
-    uint32_t adlerB    = 0;
+    u08 bitOffset = 0;
+    u32 adlerA    = 1;
+    u32 adlerB    = 0;
 
     DeflateInfo  resultInfo = {0};
     DeflateBlock block      = {0};
 
-    uint64_t i = 0;
+    u64 i = 0;
     bool endStream = false;
     while(!endStream)
     {
         DS_TRACE("starting new block at byte %"PRIu64", bit offset %"PRIu8".",
                  i, bitOffset);
-        block.BFINAL = (uint8_t)readBits(src, 1, &bitOffset, &i);
+        block.BFINAL = (u08)readBits(src, 1, &bitOffset, &i);
         if(block.BFINAL)
         {
             DS_TRACE("BFINAL found.");
             endStream = true;
         }
 
-        block.BTYPE = (uint8_t)readBits(src, 2, &bitOffset, &i);
+        block.BTYPE = (u08)readBits(src, 2, &bitOffset, &i);
         DS_TRACE("BTYPE: %"PRIu8"", block.BTYPE);
 
         if(block.BTYPE == BTYPE_UNCROMPRESSED)
         {
-            uint8_t *start = dst;
+            u08 *start = dst;
             dst = readBlock_nohuff(src, dst, og, &bitOffset, &i, &adlerA, &adlerB, cap);
             if(!dst)
             {
@@ -443,11 +445,11 @@ DeflateInfo dsReadDeflate
                 goto error;
             }
 
-            resultInfo.bytesWritten += (uint64_t)(dst - start);
+            resultInfo.bytesWritten += (u64)(dst - start);
         }
         else if(block.BTYPE == BTYPE_STATIC_HUFFMAN)
         {
-            uint8_t *start = dst;
+            u08 *start = dst;
             dst = readBlock_static(src, dst, og, &bitOffset, &i, &adlerA, &adlerB, cap);
             if(!dst)
             {
@@ -455,11 +457,11 @@ DeflateInfo dsReadDeflate
                 goto error;
             }
 
-            resultInfo.bytesWritten += (uint64_t)(dst - start);
+            resultInfo.bytesWritten += (u64)(dst - start);
         }
         else if(block.BTYPE == BTYPE_DYNAMIC_HUFFMAN)
         {
-            uint8_t *start = dst;
+            u08 *start = dst;
             dst = readBlock_dynamic(src, dst, og, &bitOffset, &i, &adlerA, &adlerB, cap);
             if(!dst)
             {
@@ -467,7 +469,7 @@ DeflateInfo dsReadDeflate
                 goto error;
             }
 
-            resultInfo.bytesWritten += (uint64_t)(dst - start);
+            resultInfo.bytesWritten += (u64)(dst - start);
         }
         else // block.BTYPE == BTYPE_RESERVED
         {

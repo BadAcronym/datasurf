@@ -1,6 +1,8 @@
 #ifndef DATASURF_HUFFMAN_HEADER
 #define DATASURF_HUFFMAN_HEADER
 
+#include "pd_int_types.h"
+
 #define BTYPE_UNCROMPRESSED   0x00
 #define BTYPE_STATIC_HUFFMAN  0x01
 #define BTYPE_DYNAMIC_HUFFMAN 0x02
@@ -8,80 +10,78 @@
 
 #define MAX_CODELEN           0x0F
 
-#include <stdint.h>
-
 typedef struct DeflateBlock
 {
-    uint8_t BFINAL : 1;
-    uint8_t BTYPE  : 2;
-    uint8_t BDATA  : 5;
+    u08 BFINAL : 1;
+    u08 BTYPE  : 2;
+    u08 BDATA  : 5;
 }
 DeflateBlock;
 
 typedef struct DynHuffBlock
 {
-    uint8_t HLIT  : 5;
-    uint8_t HDIST : 5;
-    uint8_t HCLEN : 4;
+    u08 HLIT  : 5;
+    u08 HDIST : 5;
+    u08 HCLEN : 4;
 }
 DynHuffBlock;
 
 typedef struct HuffmanCode
 {
-    uint16_t code;
-    uint16_t length;
-    uint16_t symbol;
+    u16 code;
+    u16 length;
+    u16 symbol;
 }
 HuffmanCode;
 
 typedef struct HuffmanNode
 {
-    int16_t symbol;
-    int32_t children[2];
+    i16 symbol;
+    i32 children[2];
 }
 HuffmanNode;
 
 typedef struct HuffmanTree
 {
     HuffmanNode *nodes;
-    uint16_t    nodeCount;
+    u16         nodeCount;
 }
 HuffmanTree;
 
-extern uint16_t readBits
+extern u16 readBits
 (
-    const uint8_t *src,
-    uint8_t       bitCount,
-    uint8_t       *bitOffset,
-    uint64_t      *iterator
+    const u08 *src,
+    u08       bitCount,
+    u08       *bitOffset,
+    u64       *iterator
 );
 
-extern uint16_t reverseBits
+extern u16 reverseBits
 (
-    uint16_t code,
-    uint16_t length
+    u16 code,
+    u16 length
 );
 
 extern void makeCanonicalCodes
 (
-    const uint16_t *lengths,
-    uint16_t       symbolCount,
-    HuffmanCode    *codes
+    const u16   *lengths,
+    u16         symbolCount,
+    HuffmanCode *codes
 );
 
 extern void insertCode
 (
     HuffmanTree *tree,
-    uint16_t    code,
-    uint16_t    symbol,
-    uint16_t    length
+    u16         code,
+    u16         symbol,
+    u16         length
 );
 
 extern void buildTree
 (
-    HuffmanTree    *tree,
-    const uint16_t *lengths,
-    uint16_t       symbolCount
+    HuffmanTree *tree,
+    const u16   *lengths,
+    u16         symbolCount
 );
 
 extern void destroyTree
@@ -89,12 +89,12 @@ extern void destroyTree
     HuffmanTree *tree
 );
 
-extern uint16_t decodeSymbol
+extern u16 decodeSymbol
 (
     const HuffmanTree *tree,
-    const uint8_t     *src,
-    uint8_t           *currBitOffset,
-    uint64_t          *iterator
+    const u08         *src,
+    u08               *currBitOffset,
+    u64               *iterator
 );
 
 #endif

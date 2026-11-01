@@ -4,29 +4,31 @@
 
 #include "pd_dyn_arr.h"
 
-const uint8_t bitmasks[9] =
+#include <inttypes.h>
+
+const u08 bitmasks[9] =
 {
     0x00, 0x01, 0x03, 0x07, 0x0F, 0x1F, 0x3F, 0x7F, 0xFF
 };
 
-uint16_t readBits
+u16 readBits
 (
-    const uint8_t *src,
-    uint8_t       bitCount,
-    uint8_t       *bitOffset,
-    uint64_t      *iterator
+    const u08 *src,
+    u08       bitCount,
+    u08       *bitOffset,
+    u64       *iterator
 ){
     DS_ASSERT(*bitOffset < 8, "bitOffset cannot be bigger than 7.");
     DS_ASSERT(bitCount < 16, "maximum bit count to be read is 16.");
 
-    uint16_t value    = 0;
-    uint8_t  bitsRead = 0;
+    u16 value    = 0;
+    u08 bitsRead = 0;
 
     while(bitCount > 0)
     {
-        uint8_t  available = 8 - *bitOffset;
-        uint8_t  take      = bitCount < available ? bitCount : available;
-        uint16_t part      = (src[*iterator] >> *bitOffset) & bitmasks[take];
+        u08 available = 8 - *bitOffset;
+        u08 take      = bitCount < available ? bitCount : available;
+        u16 part      = (src[*iterator] >> *bitOffset) & bitmasks[take];
 
         value      |= part << bitsRead;
         bitsRead   += take;
@@ -43,18 +45,18 @@ uint16_t readBits
     return value;
 }
 
-uint16_t reverseBits
+u16 reverseBits
 (
-    uint16_t code,
-    uint16_t length
+    u16 code,
+    u16 length
 ){
     DS_ASSERT(length < 16, "cannot reverse more than 15 bits.");
 
-    uint16_t result = 0;
+    u16 result = 0;
 
-    for(uint8_t i = 0; i < length; ++i)
+    for(u08 i = 0; i < length; ++i)
     {
-        result = (uint16_t)((result << 1) | (code & 1));
+        result = (u16)((result << 1) | (code & 1));
         code >>= 1;
     }
 
@@ -66,14 +68,14 @@ uint16_t reverseBits
 
 void makeCanonicalCodes
 (
-    const uint16_t *lengths,
-    uint16_t       symbolCount,
-    HuffmanCode    *codes
+    const u16   *lengths,
+    u16         symbolCount,
+    HuffmanCode *codes
 ){
-    uint16_t count[MAX_CODELEN + 1]    = {0};
-    uint16_t nextCode[MAX_CODELEN + 1] = {0};
+    u16 count[MAX_CODELEN + 1]    = {0};
+    u16 nextCode[MAX_CODELEN + 1] = {0};
 
-    for(uint16_t symbol = 0; symbol < symbolCount; ++symbol)
+    for(u16 symbol = 0; symbol < symbolCount; ++symbol)
     {
         if(lengths[symbol])
         {
@@ -81,23 +83,23 @@ void makeCanonicalCodes
         }
     }
 
-    uint16_t code = 0;
-    for(uint8_t bits = 1; bits < MAX_CODELEN + 1; ++bits)
+    u16 code = 0;
+    for(u08 bits = 1; bits < MAX_CODELEN + 1; ++bits)
     {
-        code = (uint16_t)((code + count[bits - 1]) << 1);
+        code = (u16)((code + count[bits - 1]) << 1);
         nextCode[bits] = code;
     }
 
-    int32_t left = 1;
-    for(uint8_t i = 1; i < MAX_CODELEN + 1; ++i)
+    i32 left = 1;
+    for(u08 i = 1; i < MAX_CODELEN + 1; ++i)
     {
         left = (left << 1u) - count[i];
         DS_ASSERT(left > -1, "tree is oversubscribed.")
     }
 
-    for(uint16_t symbol = 0; symbol < symbolCount; ++symbol)
+    for(u16 symbol = 0; symbol < symbolCount; ++symbol)
     {
-        uint16_t length = lengths[symbol];
+        u16 length = lengths[symbol];
 
         codes[symbol].symbol = symbol;
         codes[symbol].length = length;
@@ -105,7 +107,7 @@ void makeCanonicalCodes
 
         if(length)
         {
-            uint16_t canonical = nextCode[length]++;
+            u16 canonical = nextCode[length]++;
 
             DS_ASSERT(canonical < (1u << length), "canonical code overflow: "
                       "symbol: %"PRIu32" length: %"PRIu32" code: %"PRIu32"", symbol,
@@ -119,16 +121,16 @@ void makeCanonicalCodes
 void insertCode
 (
     HuffmanTree *tree,
-    uint16_t    code,
-    uint16_t    symbol,
-    uint16_t    length
+    u16         code,
+    u16         symbol,
+    u16         length
 ){
-    int32_t node = 0;
+    i32 node = 0;
 
-    for(uint8_t i = 0; i < length; ++i)
+    for(u08 i = 0; i < length; ++i)
     {
-        uint8_t bit   = (code >> i) & 1;
-        int32_t child = tree->nodes[node].children[bit];
+        u08 bit   = (code >> i) & 1;
+        i32 child = tree->nodes[node].children[bit];
 
         if(child < 0)
         {
@@ -141,7 +143,7 @@ void insertCode
             child = (int16_t)(pdArrSize(tree->nodes) - 1);
             tree->nodes[node].children[bit] = child;
 
-            DS_ASSERT(child >= 0 && child < (int16_t)pdArrSize(tree->nodes),
+            DS_ASSERT(child >= 0 && child < (i16)pdArrSize(tree->nodes),
                       "invalid Huffman child index: %"PRIi16", node count: %"PRIu64,
                       child, pdArrSize(tree->nodes));
         }
@@ -159,8 +161,8 @@ void insertCode
 void buildTree
 (
     HuffmanTree    *tree,
-    const uint16_t *lengths,
-    uint16_t       symbolCount
+    const u16 *lengths,
+    u16       symbolCount
 ){
     HuffmanNode node   = {0};
     HuffmanCode *codes = calloc(symbolCount, sizeof(HuffmanCode));
@@ -175,7 +177,7 @@ void buildTree
 
     makeCanonicalCodes(lengths, symbolCount, codes);
 
-    for(uint16_t i = 0; i < symbolCount; ++i)
+    for(u16 i = 0; i < symbolCount; ++i)
     {
         if(!codes[i].length)
         {
@@ -199,37 +201,37 @@ void destroyTree
     }
 }
 
-uint16_t decodeSymbol
+u16 decodeSymbol
 (
     const HuffmanTree *tree,
-    const uint8_t     *src,
-    uint8_t           *currBitOffset,
-    uint64_t          *iterator
+    const u08         *src,
+    u08               *currBitOffset,
+    u64               *iterator
 ){
     DS_ASSERT(*currBitOffset < 8, "currBitOffset cannot be bigger than 7.");
 
-    int32_t node = 0;
+    i32 node = 0;
 
     // read bits until the constructed code matches a value in the huffman tree that's
     // used to read the other two huffman trees.
-    for(uint8_t i = 0; i < MAX_CODELEN; ++i)
+    for(u08 i = 0; i < MAX_CODELEN; ++i)
     {
-        uint8_t bit = (uint8_t)readBits(src, 1, currBitOffset, iterator);
+        u08 bit = (u08)readBits(src, 1, currBitOffset, iterator);
         node = tree->nodes[node].children[bit];
 
         if(node < 0)
         {
             DS_ERROR("huffman code is invalid for the tree that was given.");
-            return UINT16_MAX;
+            return U16MAX;
         }
 
         if(tree->nodes[node].symbol >= 0)
         {
-            return (uint16_t)tree->nodes[node].symbol;
+            return (u16)tree->nodes[node].symbol;
         }
     }
 
     DS_ERROR("could not find huffman code (%"PRIu32") in the tree that was given "
              "within %"PRIu32" bits.", node, MAX_CODELEN);
-    return UINT16_MAX;
+    return U16MAX;
 }

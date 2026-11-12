@@ -315,7 +315,7 @@ f_internal u08 *readBlock_dynamic
     }
 
     u16 litLenTreeLength = dBlock.HLIT  + 257;
-    u08  distTreeLength   = dBlock.HDIST + 1;
+    u08 distTreeLength   = dBlock.HDIST + 1;
     u16 totalLength      = litLenTreeLength + distTreeLength;
     u16 litDistLengths[totalLength];
     u16 previousLength = 0;

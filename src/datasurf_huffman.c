@@ -60,8 +60,8 @@ u16 reverseBits
         code >>= 1;
     }
 
-    DS_ASSERT(result < (1u << length), "result (length %"PRIu32") %"PRIu32" >= %"PRIu32" (maximum)",
-              length, result, 1u << length);
+    DS_ASSERT(result < (1u << length), "result (length %"PRIu32") %"PRIu32" >= %"
+              PRIu32" (maximum)", length, result, 1u << length);
 
     return result;
 }
@@ -140,7 +140,7 @@ void insertCode
             tmp.children[1] = -1;
 
             pdArrPush(tree->nodes, tmp);
-            child = (int16_t)(pdArrSize(tree->nodes) - 1);
+            child = (i16)(pdArrSize(tree->nodes) - 1);
             tree->nodes[node].children[bit] = child;
 
             DS_ASSERT(child >= 0 && child < (i16)pdArrSize(tree->nodes),
@@ -155,14 +155,14 @@ void insertCode
               "\nSymbol %"PRIu32" at node %"PRIu32" cannot be overwritten.",
               tree->nodes[node].symbol, node);
 
-    tree->nodes[node].symbol = (int16_t)symbol;
+    tree->nodes[node].symbol = (i16)symbol;
 }
 
 void buildTree
 (
-    HuffmanTree    *tree,
-    const u16 *lengths,
-    u16       symbolCount
+    HuffmanTree *tree,
+    const u16   *lengths,
+    u16         symbolCount
 ){
     HuffmanNode node   = {0};
     HuffmanCode *codes = calloc(symbolCount, sizeof(HuffmanCode));

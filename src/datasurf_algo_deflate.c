@@ -458,6 +458,7 @@ DeflateInfo dsReadDeflate
                                    &adlerB, cap);
             if(dst == DS_END_EARLY)
             {
+                resultInfo.doneReading = false;
                 endStream = true;
                 break;
             }
@@ -473,6 +474,7 @@ DeflateInfo dsReadDeflate
                                    &adlerB, cap);
             if(dst == DS_END_EARLY)
             {
+                resultInfo.doneReading = false;
                 endStream = true;
                 break;
             }
@@ -488,6 +490,7 @@ DeflateInfo dsReadDeflate
                                     &adlerA, &adlerB, cap);
             if(dst == DS_END_EARLY)
             {
+                resultInfo.doneReading = false;
                 endStream = true;
                 break;
             }

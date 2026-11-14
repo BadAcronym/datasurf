@@ -51,6 +51,11 @@ int main
         DS_FAIL("dsReadZlibPtr: could not read uncompressed string.");
         ++failed;
     }
+    else if(!dfInfo.doneReading)
+    {
+        DS_FAIL("dsReadZlibPtr: did not decode uncompressed string fully.");
+        ++failed;
+    }
     else
     {
         if(!verify(uncompressed + 7, testUncompressed))
@@ -97,6 +102,11 @@ int main
     if(!dfInfo.success)
     {
         DS_FAIL("dsReadZlibPtr: could not read string with fast compression.");
+        ++failed;
+    }
+    else if(!dfInfo.doneReading)
+    {
+        DS_FAIL("dsReadZlibPtr: did not decode fast compression string fully.");
         ++failed;
     }
     else
@@ -158,6 +168,11 @@ int main
         DS_FAIL("dsReadZlibPtr: could not read string with max compression.");
         ++failed;
     }
+    else if(!dfInfo.doneReading)
+    {
+        DS_FAIL("dsReadZlibPtr: did not decode max compression string fully.");
+        ++failed;
+    }
     else
     {
         if(!verify(maxCompressedDcode, testMaxCompressed))
@@ -180,6 +195,11 @@ int main
     if(!dfInfo.success)
     {
         DS_FAIL("dsReadZlibPtr: could not read big data.");
+        ++failed;
+    }
+    else if(!dfInfo.doneReading)
+    {
+        DS_FAIL("dsReadZlibPtr: did not decode big data fully.");
         ++failed;
     }
     else
@@ -205,7 +225,12 @@ int main
     dfInfo = dsReadZlibPtr(stream, alignmentBuf, sizeof(alignmentBuf));
     if(!dfInfo.success)
     {
-        DS_FAIL("dsReadZlibPtr: could not read big data.");
+        DS_FAIL("dsReadZlibPtr: could not read 0 LEN data.");
+        ++failed;
+    }
+    else if(!dfInfo.doneReading)
+    {
+        DS_FAIL("dsReadZlibPtr: did not decode 0 LEN data fully.");
         ++failed;
     }
     else

@@ -13,16 +13,29 @@ typedef struct DeflateInfo
     u64  bytesRead;
     u64  bytesWritten;
     bool success;
+    bool filled;
 }
 DeflateInfo;
 
 // `cap` is the actual cap on your output buffer size.
 // returns both the compressed amount of bytes read,
 // as well as the decompressed amount of bytes produced.
+// if `cap` bytes are filled, but there is still more data
+// to read, `filled` will be false.
 extern DeflateInfo dsReadZlibPtr
 (
     const u08 *zlib,
     u08       *dest,
+    u64       cap
+);
+
+// like the simple dsReadZlibPtrScratch, but will only work
+// with a scratch buffer of `bufsize` bytes.
+extern DeflateInfo dsReadZlibPtrScratch
+(
+    const u08 *zlib,
+    u08       *dest,
+    u64       bufsize,
     u64       cap
 );
 

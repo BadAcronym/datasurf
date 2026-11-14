@@ -4,6 +4,8 @@
 
 #include <inttypes.h>
 
+#define DS_END_EARLY ((u08*)1)
+
 s_global const u08 dynHuffCodelenghOrder[19] =
 {
     16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
@@ -51,6 +53,7 @@ s_global const u08 distanceExtraBits[30] =
 
 f_internal u08 *decodeHuffmanTrees
 (
+    DeflateInfo *info,
     HuffmanTree *litLenTree,
     HuffmanTree *distanceTree,
     const u08   *src,
@@ -77,6 +80,13 @@ f_internal u08 *decodeHuffmanTrees
             *dst    = (u08)symbol;
             *adlerA = (*adlerA + *dst++)  % ADLER_PRIME;
             *adlerB = (*adlerB + *adlerA) % ADLER_PRIME;
+
+            if(info->bytesWritten >= cap)
+            {
+                return DS_END_EARLY;
+            }
+            ++info->bytesWritten;
+
             continue;
         }
         else if(symbol == 256)
@@ -121,7 +131,7 @@ f_internal u08 *decodeHuffmanTrees
         }
         else // symbol < 30
         {
-            u08  bitCount  = distanceExtraBits[symbol];
+            u08 bitCount  = distanceExtraBits[symbol];
             u32 extraBits = 0;
 
             if(bitCount)
@@ -162,20 +172,26 @@ f_internal u08 *decodeHuffmanTrees
             *dst    = *(dst - distance);
             *adlerA = (*adlerA + *dst++)  % ADLER_PRIME;
             *adlerB = (*adlerB + *adlerA) % ADLER_PRIME;
+
+            if(info->bytesWritten >= cap)
+            {
+                return DS_END_EARLY;
+            }
+            ++info->bytesWritten;
         }
     }
 }
 
 f_internal u08 *readBlock_nohuff
 (
-    const u08 *src,
-    u08       *dst,
-    u08       *og,
-    u08       *bitOffset,
-    u64       *iterator,
-    u32       *adlerA,
-    u32       *adlerB,
-    u64       cap
+    DeflateInfo *info,
+    const u08   *src,
+    u08         *dst,
+    u08         *bitOffset,
+    u64         *iterator,
+    u32         *adlerA,
+    u32         *adlerB,
+    u64         cap
 ){
     DS_TRACE("reading uncompressed block at byte %"PRIu64", bit offset %"PRIu8".",
              *iterator, *bitOffset);
@@ -200,14 +216,6 @@ f_internal u08 *readBlock_nohuff
         return dst;
     }
 
-    DS_ASSERT(LEN - 1 < cap - (u64)(dst - og), "output buffer overflow. trying to "
-              "read length %"PRIu32", max %"PRIu64".", LEN, cap - (u64)(dst - og));
-
-    if(LEN > cap - (u64)(dst - og))
-    {
-        return 0;
-    }
-
     if(NLEN != COMP)
     {
         DS_ERROR("NLEN does not match 1's complement of LEN: LEN: %"PRIu32", "
@@ -221,6 +229,12 @@ f_internal u08 *readBlock_nohuff
         *adlerA = (*adlerA + *dst++)  % ADLER_PRIME;
         *adlerB = (*adlerB + *adlerA) % ADLER_PRIME;
         *iterator += 1;
+
+        if(info->bytesWritten >= cap)
+        {
+            return DS_END_EARLY;
+        }
+        ++info->bytesWritten;
     }
 
     return dst;
@@ -228,14 +242,15 @@ f_internal u08 *readBlock_nohuff
 
 f_internal u08 *readBlock_static
 (
-    const u08 *src,
-    u08       *dst,
-    u08       *og,
-    u08       *bitOffset,
-    u64       *iterator,
-    u32       *adlerA,
-    u32       *adlerB,
-    u64       cap
+    DeflateInfo *info,
+    const u08   *src,
+    u08         *dst,
+    u08         *og,
+    u08         *bitOffset,
+    u64         *iterator,
+    u32         *adlerA,
+    u32         *adlerB,
+    u64         cap
 ){
     DS_TRACE("reading static block at byte %"PRIu64", bit offset %"PRIu8".",
              *iterator, *bitOffset);
@@ -270,7 +285,7 @@ f_internal u08 *readBlock_static
     buildTree(&literalLengthTree, litLenLengths, 288);
     buildTree(&distanceTree, distLengths, 32);
 
-    dst = decodeHuffmanTrees(&literalLengthTree, &distanceTree, src, dst, og,
+    dst = decodeHuffmanTrees(info, &literalLengthTree, &distanceTree, src, dst, og,
                              bitOffset, iterator, adlerA, adlerB, cap);
 
     destroyTree(&literalLengthTree);
@@ -281,14 +296,15 @@ f_internal u08 *readBlock_static
 
 f_internal u08 *readBlock_dynamic
 (
-    const u08 *src,
-    u08       *dst,
-    u08       *og,
-    u08       *bitOffset,
-    u64       *iterator,
-    u32       *adlerA,
-    u32       *adlerB,
-    u64       cap
+    DeflateInfo *info,
+    const u08   *src,
+    u08         *dst,
+    u08         *og,
+    u08         *bitOffset,
+    u64         *iterator,
+    u32         *adlerA,
+    u32         *adlerB,
+    u64         cap
 ){
     DS_TRACE("reading dynamic block at byte %"PRIu64", bit offset %"PRIu8".",
              *iterator, *bitOffset);
@@ -393,7 +409,7 @@ f_internal u08 *readBlock_dynamic
     // literal
     // ...
 
-    dst = decodeHuffmanTrees(&literalLengthTree, &distanceTree, src, dst, og,
+    dst = decodeHuffmanTrees(info, &literalLengthTree, &distanceTree, src, dst, og,
                              bitOffset, iterator, adlerA, adlerB, cap);
 
     destroyTree(&literalLengthTree);
@@ -437,39 +453,48 @@ DeflateInfo dsReadDeflate
 
         if(block.BTYPE == BTYPE_UNCROMPRESSED)
         {
-            u08 *start = dst;
-            dst = readBlock_nohuff(src, dst, og, &bitOffset, &i, &adlerA, &adlerB, cap);
-            if(!dst)
+            dst = readBlock_nohuff(&resultInfo, src, dst, &bitOffset, &i, &adlerA,
+                                   &adlerB, cap);
+            if(dst == DS_END_EARLY)
+            {
+                endStream = true;
+                break;
+            }
+            else if(!dst)
             {
                 DS_ERROR("failed to read uncompressed huffman block.");
                 goto error;
             }
-
-            resultInfo.bytesWritten += (u64)(dst - start);
         }
         else if(block.BTYPE == BTYPE_STATIC_HUFFMAN)
         {
-            u08 *start = dst;
-            dst = readBlock_static(src, dst, og, &bitOffset, &i, &adlerA, &adlerB, cap);
-            if(!dst)
+            dst = readBlock_static(&resultInfo, src, dst, og, &bitOffset, &i, &adlerA,
+                                   &adlerB, cap);
+            if(dst == DS_END_EARLY)
+            {
+                endStream = true;
+                break;
+            }
+            else if(!dst)
             {
                 DS_ERROR("failed to read static huffman block.");
                 goto error;
             }
-
-            resultInfo.bytesWritten += (u64)(dst - start);
         }
         else if(block.BTYPE == BTYPE_DYNAMIC_HUFFMAN)
         {
-            u08 *start = dst;
-            dst = readBlock_dynamic(src, dst, og, &bitOffset, &i, &adlerA, &adlerB, cap);
-            if(!dst)
+            dst = readBlock_dynamic(&resultInfo, src, dst, og, &bitOffset, &i,
+                                    &adlerA, &adlerB, cap);
+            if(dst == DS_END_EARLY)
+            {
+                endStream = true;
+                break;
+            }
+            else if(!dst)
             {
                 DS_ERROR("failed to read dynamic huffman block.");
                 goto error;
             }
-
-            resultInfo.bytesWritten += (u64)(dst - start);
         }
         else // block.BTYPE == BTYPE_RESERVED
         {

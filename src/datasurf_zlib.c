@@ -34,12 +34,6 @@ DeflateInfo dsReadZlibPtr
 ){
     DeflateInfo defInfo = {0};
 
-    if(cap < 3)
-    {
-        DS_ERROR("cannot read less than 3 bytes of zlib data. max passed: %"PRIu64".",
-                 cap);
-        return (DeflateInfo){0};
-    }
     ZLibUnion uInfo = { .data = {zlib[0], zlib[1], zlib[2]} };
     ZlibInfo  info  = uInfo.info;
 

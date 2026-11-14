@@ -26,6 +26,38 @@ typedef union ZLibUnion
 }
 ZLibUnion;
 
+f_internal bool validateInfo
+(
+    ZLibUnion *uInfo,
+    ZlibInfo  *info
+){
+    if(info->CM != 8)
+    {
+        DS_ERROR("could not validate CMF in zlib data. expected: 8, got: %"
+                 PRIu32".", info->CM);
+        return false;
+    }
+
+    DS_TRACE("CMF: 0x%X", uInfo->og.CMF);
+    DS_TRACE("FLG: 0x%X", uInfo->og.FLG);
+
+    u16 header = (u16)(uInfo->og.CMF << 8) | uInfo->og.FLG;
+    if(header % 31 != 0)
+    {
+        DS_ERROR("Failed zlib header integrity check: CMF*256 + FLG is not a multiple "
+                 "of 31, but %"PRIu32".", header);
+        return false;
+    }
+
+    DS_TRACE("CM:     %"PRIu8, info->CM);
+    DS_TRACE("CINFO:  %"PRIu8, info->CINFO);
+    DS_TRACE("FCHECK: %"PRIu8, info->FCHECK);
+    DS_TRACE("FDICT:  %"PRIu8, info->FDICT);
+    DS_TRACE("FLEVEL: %"PRIu8, info->FLEVEL);
+
+    return true;
+}
+
 DeflateInfo dsReadZlibPtr
 (
     const u08 *zlib,
@@ -37,29 +69,10 @@ DeflateInfo dsReadZlibPtr
     ZLibUnion uInfo = { .data = {zlib[0], zlib[1], zlib[2]} };
     ZlibInfo  info  = uInfo.info;
 
-    if(info.CM != 8)
+    if(!validateInfo(&uInfo, &info))
     {
-        DS_ERROR("could not validate CMF in zlib data. expected: 8, got: %"
-                 PRIu32".", info.CM);
         return (DeflateInfo){0};
     }
-
-    DS_TRACE("CMF: 0x%X", uInfo.og.CMF);
-    DS_TRACE("FLG: 0x%X", uInfo.og.FLG);
-
-    u16 header = (u16)(uInfo.og.CMF << 8) | uInfo.og.FLG;
-    if(header % 31 != 0)
-    {
-        DS_ERROR("Failed zlib header integrity check: CMF*256 + FLG is not a multiple "
-                 "of 31, but %"PRIu32".", header);
-        return (DeflateInfo){0};
-    }
-
-    DS_TRACE("CM:     %"PRIu8, info.CM);
-    DS_TRACE("CINFO:  %"PRIu8, info.CINFO);
-    DS_TRACE("FCHECK: %"PRIu8, info.FCHECK);
-    DS_TRACE("FDICT:  %"PRIu8, info.FDICT);
-    DS_TRACE("FLEVEL: %"PRIu8, info.FLEVEL);
 
     u32 DICTID       = 0;
     u32 madeChecksum = 0;
@@ -97,6 +110,31 @@ DeflateInfo dsReadZlibPtr
                  madeChecksum, readChecksum);
         defInfo.success = false;
     }
+
+    return defInfo;
+}
+
+DeflateInfo dsReadZlibPtrScratch
+(
+    const u08 *zlib,
+    u08       *dest,
+    u64       bufsize,
+    u64       cap
+){
+    DeflateInfo defInfo = {0};
+
+    ZLibUnion uInfo = { .data = {zlib[0], zlib[1], zlib[2]} };
+    ZlibInfo  info  = uInfo.info;
+
+    if(!validateInfo(&uInfo, &info))
+    {
+        return (DeflateInfo){0};
+    }
+
+    defInfo = dsReadDeflateScratch(&zlib[2], dest, bufsize, cap);
+
+    DS_DEBUG("read a total of  %"PRIu64" compressed bytes.",   defInfo.bytesRead);
+    DS_DEBUG("wrote a total of %"PRIu64" decompressed bytes.", defInfo.bytesWritten);
 
     return defInfo;
 }

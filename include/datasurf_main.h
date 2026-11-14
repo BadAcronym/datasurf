@@ -8,8 +8,14 @@
 
 #define ADLER_PRIME 65521ULL
 
+// contains both the compressed amount of bytes read,
+// as well as the decompressed amount of bytes produced.
+// we might succeed in reading less than the total amount
+// of bytes that could be decoded, hence success != done.
+// scratch buffer reading will return the `cursor` position.
 typedef struct DeflateInfo
 {
+    u64  cursor;
     u64  bytesRead;
     u64  bytesWritten;
     bool doneReading;
@@ -29,8 +35,9 @@ extern DeflateInfo dsReadZlibPtr
     u64       cap
 );
 
-// like the simple dsReadZlibPtrScratch, but will only work
-// with a scratch buffer of `bufsize` bytes.
+// like the simple dsReadZlibPtr, but will only work with a
+// scratch buffer of `bufsize` bytes. The resulting data will
+// be from `cap - bufsize` to `cap` bytes.
 extern DeflateInfo dsReadZlibPtrScratch
 (
     const u08 *zlib,
@@ -39,13 +46,19 @@ extern DeflateInfo dsReadZlibPtrScratch
     u64       cap
 );
 
-// returns both the compressed amount of bytes read,
-// as well as the decompressed amount of bytes produced.
 extern DeflateInfo dsReadDeflate
 (
     const u08 *src,
     u08       *dst,
     u32       *checksum,
+    u64       cap
+);
+
+extern DeflateInfo dsReadDeflateScratch
+(
+    const u08 *src,
+    u08       *dst,
+    u64       bufsize,
     u64       cap
 );
 

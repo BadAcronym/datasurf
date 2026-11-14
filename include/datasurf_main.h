@@ -12,8 +12,8 @@ typedef struct DeflateInfo
 {
     u64  bytesRead;
     u64  bytesWritten;
+    bool doneReading;
     bool success;
-    bool filled;
 }
 DeflateInfo;
 
@@ -21,7 +21,7 @@ DeflateInfo;
 // returns both the compressed amount of bytes read,
 // as well as the decompressed amount of bytes produced.
 // if `cap` bytes are filled, but there is still more data
-// to read, `filled` will be false.
+// to read, `doneReading` will be false.
 extern DeflateInfo dsReadZlibPtr
 (
     const u08 *zlib,

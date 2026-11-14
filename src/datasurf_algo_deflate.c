@@ -445,6 +445,7 @@ DeflateInfo dsReadDeflate
         if(block.BFINAL)
         {
             DS_TRACE("BFINAL found.");
+            resultInfo.doneReading = true;
             endStream = true;
         }
 

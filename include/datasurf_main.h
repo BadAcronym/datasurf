@@ -3,6 +3,7 @@
 
 #define f_internal static
 #define s_global   static
+#define BILLION    1000000000L
 
 #include "pd_int_types.h"
 
@@ -40,6 +41,11 @@ extern DeflateInfo dsReadDeflate
     u08       *dst,
     u32       *checksum,
     u64       cap
+);
+
+extern u64 dsQueryMonotonic
+(
+    void
 );
 
 #endif

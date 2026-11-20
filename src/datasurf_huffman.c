@@ -201,6 +201,7 @@ void destroyTree
     }
 }
 
+// PERF: bottleneck.
 u16 decodeSymbol
 (
     const HuffmanTree *tree,

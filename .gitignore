@@ -12,12 +12,14 @@ compile_flags*
 *.log
 PowerShellEditorServices.json
 *reconstructed.*
+callgrind.*
+
+# test objects
+assets/*
 
 # Paul stuff
 Makefile
 /makes/
-
-## Eclipse
 .cproject
 .project
 /.settings/

@@ -1,6 +1,9 @@
 #include "datasurf_main.h"
 #include "ds_print_macros.h"
 
+#include "pd_util.h"
+#include "pd_path.h"
+
 #include <inttypes.h>
 
 f_internal bool verify
@@ -99,6 +102,7 @@ int main
 
     dfInfo = dsReadZlibPtr(fastCompressed, testFastCompressed,
                            sizeof testFastCompressed);
+
     if(!dfInfo.success)
     {
         DS_FAIL("dsReadZlibPtr: could not read string with fast compression.");
@@ -162,7 +166,7 @@ int main
     }
     u08 testMaxCompressed[61 * 39]  = {0};
 
-    dfInfo = dsReadZlibPtr(maxCompressed, testMaxCompressed, 61 * 39);
+    dfInfo = dsReadZlibPtr(maxCompressed, testMaxCompressed, sizeof testMaxCompressed);
     if(!dfInfo.success)
     {
         DS_FAIL("dsReadZlibPtr: could not read string with max compression.");
@@ -236,6 +240,41 @@ int main
     else
     {
         DS_SUCCESS("passed dsReadZlibPtr with 0 LEN.");
+    }
+
+    printf("\n");
+    if(pdVerifyPath(pdCstrSV("assets/hugePNG.zlib")))
+    {
+        BinBuffer hugeObject = pdReadBinFile("assets/hugePNG.zlib");
+        u08 *hugeObjBuf = malloc(70 * 1024 * 1024);
+
+        u64 start = dsQueryMonotonic();
+        dfInfo = dsReadZlibPtr(hugeObject.data, hugeObjBuf, 70 * 1024 * 1024);
+        u64 hugeObjectNS  = dsQueryMonotonic() - start;
+        f32 hugeObjectMS  = (f32)hugeObjectNS / 1000000.0f;
+        f32 hugeObjectBPS = (f32)(dfInfo.bytesWritten) / (hugeObjectMS / 1000.0f);
+
+        free(hugeObjBuf);
+
+        printf("huge Object test 0 took %7.2f ms. Throughput: %6.2f MB/s\n",
+               hugeObjectMS, hugeObjectBPS / 1000000.0f);
+    }
+
+    if(pdVerifyPath(pdCstrSV("assets/hugePack.zlib")))
+    {
+        BinBuffer hugeObject = pdReadBinFile("assets/hugePack.zlib");
+        u08 *hugeObjBuf = malloc(530 * 1024 * 1024);
+
+        u64 start = dsQueryMonotonic();
+        dfInfo = dsReadZlibPtr(hugeObject.data, hugeObjBuf, 530 * 1024 * 1024);
+        u64 hugeObject0NS  = dsQueryMonotonic() - start;
+        f32 hugeObject0MS  = (f32)hugeObject0NS / 1000000.0f;
+        f32 hugeObject0BPS = (f32)(dfInfo.bytesWritten) / (hugeObject0MS / 1000.0f);
+
+        free(hugeObjBuf);
+
+        printf("huge Object test 1 took %7.2f ms. Throughput: %6.2f MB/s\n",
+               hugeObject0MS, hugeObject0BPS / 1000000.0f);
     }
 
     return failed;

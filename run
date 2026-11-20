@@ -17,9 +17,13 @@ src/datasurf_test.c \
 src/datasurf_zlib.c \
 src/datasurf_huffman.c \
 src/datasurf_algo_deflate.c \
+src/linux_datasurf_test.c \
+vendor/puddle/src/pd_util.c \
+vendor/puddle/src/linux_pd_path.c \
+vendor/puddle/src/pd_string_view.c \
 -Iinclude/ \
--std=c99 \
 -Ivendor/puddle/include/ \
+-std=gnu99 \
 -Wextra -Wall -Wpedantic -Wconversion -Wshadow -Wsign-compare -Wtype-limits -Wunused \
 -fuse-ld=mold"
 

@@ -113,28 +113,3 @@ DeflateInfo dsReadZlibPtr
 
     return defInfo;
 }
-
-DeflateInfo dsReadZlibPtrScratch
-(
-    const u08 *zlib,
-    u08       *dest,
-    u64       bufsize,
-    u64       cap
-){
-    DeflateInfo defInfo = {0};
-
-    ZLibUnion uInfo = { .data = {zlib[0], zlib[1], zlib[2]} };
-    ZlibInfo  info  = uInfo.info;
-
-    if(!validateInfo(&uInfo, &info))
-    {
-        return (DeflateInfo){0};
-    }
-
-    defInfo = dsReadDeflateScratch(&zlib[2], dest, bufsize, cap);
-
-    DS_DEBUG("read a total of  %"PRIu64" compressed bytes.",   defInfo.bytesRead);
-    DS_DEBUG("wrote a total of %"PRIu64" decompressed bytes.", defInfo.bytesWritten);
-
-    return defInfo;
-}

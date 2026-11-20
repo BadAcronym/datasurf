@@ -12,7 +12,6 @@
 // as well as the decompressed amount of bytes produced.
 // we might succeed in reading less than the total amount
 // of bytes that could be decoded, hence success != done.
-// scratch buffer reading will return the `cursor` position.
 typedef struct DeflateInfo
 {
     u64  cursor;
@@ -35,30 +34,11 @@ extern DeflateInfo dsReadZlibPtr
     u64       cap
 );
 
-// like the simple dsReadZlibPtr, but will only work with a
-// scratch buffer of `bufsize` bytes. The resulting data will
-// be from `cap - bufsize` to `cap` bytes.
-extern DeflateInfo dsReadZlibPtrScratch
-(
-    const u08 *zlib,
-    u08       *dest,
-    u64       bufsize,
-    u64       cap
-);
-
 extern DeflateInfo dsReadDeflate
 (
     const u08 *src,
     u08       *dst,
     u32       *checksum,
-    u64       cap
-);
-
-extern DeflateInfo dsReadDeflateScratch
-(
-    const u08 *src,
-    u08       *dst,
-    u64       bufsize,
     u64       cap
 );
 

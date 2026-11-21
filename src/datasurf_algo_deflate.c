@@ -215,6 +215,8 @@ f_internal void buildTree
 
     DS_ASSERT(codes, "failed to allocate HuffmanCode array.")
 
+    pdArrReserve(tree->nodes, symbolCount);
+
     // root node
     node.symbol      = -1;
     node.children[0] = -1;
@@ -266,11 +268,7 @@ f_internal u16 decodeSymbol
         u08 bit = (u08)readBits(src, 1, currBitOffset, iterator);
         node = tree->nodes[node].children[bit];
 
-        if(node < 0)
-        {
-            DS_ERROR("huffman code is invalid for the tree that was given.");
-            return U16MAX;
-        }
+        DS_ASSERT(node >= 0, "huffman code is invalid for the tree that was given.");
 
         if(tree->nodes[node].symbol >= 0)
         {
@@ -278,8 +276,8 @@ f_internal u16 decodeSymbol
         }
     }
 
-    DS_ERROR("could not find huffman code (%"PRIu32") in the tree that was given "
-             "within %"PRIu32" bits.", node, MAX_CODELEN);
+    DS_ASSERT(0, "could not find huffman code (%"PRIu32") in the tree that was given "
+                 "within %"PRIu32" bits.", node, MAX_CODELEN);
     return U16MAX;
 }
 

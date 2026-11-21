@@ -9,6 +9,13 @@
 
 #define ADLER_PRIME 65521ULL
 
+#define BTYPE_UNCROMPRESSED   0x00
+#define BTYPE_STATIC_HUFFMAN  0x01
+#define BTYPE_DYNAMIC_HUFFMAN 0x02
+#define BTYPE_RESERVED        0x03
+
+#define MAX_CODELEN           0x0F
+
 // contains both the compressed amount of bytes read,
 // as well as the decompressed amount of bytes produced.
 // we might succeed in reading less than the total amount
@@ -22,6 +29,44 @@ typedef struct DeflateInfo
     bool success;
 }
 DeflateInfo;
+
+typedef struct DeflateBlock
+{
+    u08 BFINAL : 1;
+    u08 BTYPE  : 2;
+    u08 BDATA  : 5;
+}
+DeflateBlock;
+
+typedef struct DynHuffBlock
+{
+    u08 HLIT  : 5;
+    u08 HDIST : 5;
+    u08 HCLEN : 4;
+}
+DynHuffBlock;
+
+typedef struct HuffmanCode
+{
+    u16 code;
+    u16 length;
+    u16 symbol;
+}
+HuffmanCode;
+
+typedef struct HuffmanNode
+{
+    i16 symbol;
+    i32 children[2];
+}
+HuffmanNode;
+
+typedef struct HuffmanTree
+{
+    HuffmanNode *nodes;
+    u16         nodeCount;
+}
+HuffmanTree;
 
 // `cap` is the actual cap on your output buffer size.
 // returns both the compressed amount of bytes read,

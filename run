@@ -15,7 +15,6 @@ fi
 args_always="-DBUILD_LINUX \
 src/datasurf_test.c \
 src/datasurf_zlib.c \
-src/datasurf_huffman.c \
 src/datasurf_algo_deflate.c \
 src/linux_datasurf_test.c \
 vendor/puddle/src/pd_util.c \

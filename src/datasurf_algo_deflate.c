@@ -52,7 +52,7 @@ s_global const u08 distanceExtraBits[30] =
     11, 11, 12, 12, 13, 13
 };
 
-const u08 bitmasks[9] =
+s_global const u08 bitmasks[9] =
 {
     0x00, 0x01, 0x03, 0x07, 0x0F, 0x1F, 0x3F, 0x7F, 0xFF
 };

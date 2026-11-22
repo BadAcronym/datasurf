@@ -15,6 +15,7 @@ PowerShellEditorServices.json
 callgrind.*
 
 # test objects
+assets
 assets/*
 
 # Paul stuff

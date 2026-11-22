@@ -57,7 +57,7 @@ const u08 bitmasks[9] =
     0x00, 0x01, 0x03, 0x07, 0x0F, 0x1F, 0x3F, 0x7F, 0xFF
 };
 
-f_internal u16 readBits
+f_internal inline u16 readBits
 (
     const u08 *src,
     u08       bitCount,
@@ -91,20 +91,20 @@ f_internal u16 readBits
     return value;
 }
 
-f_internal u16 reverseBits
+f_internal inline u16 reverseBits
 (
     u16 code,
     u16 length
 ){
+    DS_ASSERT(length, "cannot reverse 0 bits.");
     DS_ASSERT(length < 16, "cannot reverse more than 15 bits.");
 
-    u16 result = 0;
+    code = (u16)(((code >> 1) & 0x5555U) | ((code & 0x5555U) << 1));
+    code = (u16)(((code >> 2) & 0x3333U) | ((code & 0x3333U) << 2));
+    code = (u16)(((code >> 4) & 0x0F0FU) | ((code & 0x0F0FU) << 4));
+    code = (u16)((code >> 8) | (code << 8));
 
-    for(u08 i = 0; i < length; ++i)
-    {
-        result = (u16)((result << 1) | (code & 1));
-        code >>= 1;
-    }
+    u16 result = (u16)(code >> (16 - length));
 
     DS_ASSERT(result < (1u << length), "result (length %"PRIu32") %"PRIu32" >= %"
               PRIu32" (maximum)", length, result, 1u << length);
@@ -164,7 +164,7 @@ f_internal void makeCanonicalCodes
     }
 }
 
-f_internal void insertCode
+f_internal inline void insertCode
 (
     HuffmanTree *tree,
     u16         code,
@@ -180,7 +180,7 @@ f_internal void insertCode
 
         if(child < 0)
         {
-            HuffmanNode tmp = {0};
+            HuffmanNode tmp;
             tmp.symbol      = -1;
             tmp.children[0] = -1;
             tmp.children[1] = -1;
@@ -204,7 +204,7 @@ f_internal void insertCode
     tree->nodes[node].symbol = (i16)symbol;
 }
 
-f_internal void buildTree
+f_internal inline void buildTree
 (
     HuffmanTree *tree,
     const u16   *lengths,
@@ -239,7 +239,7 @@ f_internal void buildTree
     free(codes);
 }
 
-f_internal void destroyTree
+f_internal inline void destroyTree
 (
     HuffmanTree *tree
 ){
@@ -249,7 +249,27 @@ f_internal void destroyTree
     }
 }
 
-// PERF: bottleneck.
+// PERF: when we end up having a lookup table, it's probably worth
+// only calling readBits once, then using those bits in a lookup table.
+// with a tree, it would look like this (which loses us 10% perf right now):
+// f_internal u16 decodeSymbol
+// (
+//     ...
+// ){
+//     i32 node = 0;
+//     u16 bits = readBits(src, MAX_CODELEN, currBitOffset, iterator);
+//
+//     for(u08 i = 0; i < MAX_CODELEN; ++i)
+//     {
+//         node = tree->nodes[node].children[(bool)(bits & (0x1 << i))];
+//         if(tree->nodes[node].symbol >= 0)
+//         {
+//             rewindBits(currBitOffset, iterator, MAX_CODELEN - (i + 1));
+//             return (u16)tree->nodes[node].symbol;
+//         }
+//     }
+//     return U16MAX;
+// }
 f_internal u16 decodeSymbol
 (
     const HuffmanTree *tree,

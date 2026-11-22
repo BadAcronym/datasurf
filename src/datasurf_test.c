@@ -28,7 +28,8 @@ f_internal bool verify
 
 int main
 (
-    void
+    int        argc,
+    const char **argv
 ){
     u08 failed = 0;
     u08 uncompressed[64] =
@@ -243,6 +244,20 @@ int main
     }
 
     printf("\n");
+
+    if(argc < 2)
+    {
+        return failed;
+    }
+
+    StringView bigTestIdent = pdCstrSV("--big");
+    StringView second = pdCstrSV(argv[1]);
+
+    if(!pdSVSame(second, bigTestIdent))
+    {
+        return failed;
+    }
+
     if(pdVerifyPath(pdCstrSV("assets/hugePNG.zlib")))
     {
         BinBuffer hugeObject = pdReadBinFile("assets/hugePNG.zlib");

@@ -73,8 +73,14 @@ f_internal inline u16 readBits
     while(bitCount > 0)
     {
         u08 available = 8 - *bitOffset;
-        u08 take      = bitCount < available ? bitCount : available;
-        u16 part      = (src[*iterator] >> *bitOffset) & bitmasks[take];
+        u08 take      = available;
+
+        if(DS_LIKELY(bitCount < available))
+        {
+            take = bitCount;
+        }
+
+        u16 part = (src[*iterator] >> *bitOffset) & bitmasks[take];
 
         value      |= part << bitsRead;
         bitsRead   += take;

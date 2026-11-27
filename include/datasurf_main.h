@@ -5,6 +5,9 @@
 #define s_global   static
 #define BILLION    1000000000L
 
+#define DS_LIKELY(c)   __builtin_expect(!!(c), 1)
+#define DS_UNLIKELY(c) __builtin_expect(!!(c), 0)
+
 #include "pd_int_types.h"
 
 #define ADLER_PRIME 65521ULL
